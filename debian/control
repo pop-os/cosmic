@@ -1,0 +1,13 @@
+Source: pop-cosmic
+Section: gnome
+Priority: optional
+Maintainer: Jeremy Soller <jeremy@system76.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 3.9.8
+Homepage: https://github.com/pop-os/cosmic
+Vcs-Git: https://github.com/pop-os/cosmic.git
+
+Package: pop-cosmic
+Architecture: all
+Depends: gnome-shell (>= 3.38), ${misc:Depends}
+Description: Computer Operation System Main Interface Components

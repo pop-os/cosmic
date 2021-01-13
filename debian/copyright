@@ -1,0 +1,7 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: pop-cosmic
+Source: https://github.com/pop-os/cosmic
+
+Files: *
+Copyright: 2021 System76
+License: GPLv3
