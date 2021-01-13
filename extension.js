@@ -5,7 +5,7 @@ const SwitcherPopup = imports.ui.switcherPopup;
 let injections = [];
 
 function inject(object, parameter, replacement) {
-    injections.add({
+    injections.push({
         "object": object,
         "parameter": parameter,
         "value": object[parameter]
