@@ -1,3 +1,3 @@
 # COSMIC
 
-Computer Operation System Main Interface Components
+Computer Operating System Main Interface Components
