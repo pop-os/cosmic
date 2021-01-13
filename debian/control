@@ -10,4 +10,4 @@ Vcs-Git: https://github.com/pop-os/cosmic.git
 Package: pop-cosmic
 Architecture: all
 Depends: gnome-shell (>= 3.38), ${misc:Depends}
-Description: Computer Operation System Main Interface Components
+Description: Computer Operating System Main Interface Components
