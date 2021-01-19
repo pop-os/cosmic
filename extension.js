@@ -70,7 +70,7 @@ class CosmicTopBarButton extends PanelMenu.Button {
     }
 
     is_active() {
-        if (Main.overview.visible) {
+        if (Main.overview.visibleTarget) {
             if (this.page !== null) {
                 return this.page === Main.overview.viewSelector.getActivePage();
             } else {
