@@ -168,7 +168,7 @@ function init(metadata) {}
 
 function enable() {
     // Raise first window on alt-tab
-    inject(AltTab.AppSwitcherPopup.prototype, "_finish", function() {
+    inject(AltTab.AppSwitcherPopup.prototype, "_finish", function(timestamp) {
         let appIcon = this._items[this._selectedIndex];
         if (this._currentWindow < 0)
             Main.activateWindow(appIcon.cachedWindows[0], timestamp);
