@@ -7,5 +7,6 @@
   ],
   "url": "https://github.com/pop-os/cosmic",
   "uuid": "pop-cosmic@system76.com",
+  "settings-schema": "org.gnome.shell.extensions.pop-cosmic",
   "version": 1
 }
