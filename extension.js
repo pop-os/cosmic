@@ -2,6 +2,7 @@ const { Atk, Clutter, GLib, GObject, St } = imports.gi;
 const AppDisplay = imports.ui.appDisplay;
 const AltTab = imports.ui.altTab;
 const Main = imports.ui.main;
+const OverviewControls = imports.ui.overviewControls;
 const PanelMenu = imports.ui.panelMenu;
 const Shell = imports.gi.Shell;
 const SwitcherPopup = imports.ui.switcherPopup;
@@ -164,6 +165,27 @@ class CosmicTopBarButton extends PanelMenu.Button {
     }
 });
 
+function workspace_picker_direction(controls, left) {
+    if (left) {
+        let first = controls._group.get_first_child();
+        if (first != controls._thumbnailsSlider) {
+            controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.LEFT;
+            controls._thumbnailsBox.remove_style_class_name('workspace-thumbnails');
+            controls._thumbnailsBox.set_style_class_name('workspace-thumbnails workspace-thumbnails-left');
+            controls._group.set_child_below_sibling(controls._thumbnailsSlider, first)
+        }
+    }
+    else {
+        let last = controls._group.get_last_child();
+        if (last != controls._thumbnailsSlider) {
+            controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.RIGHT;
+            controls._thumbnailsBox.remove_style_class_name('workspace-thumbnails workspace-thumbnails-left');
+            controls._thumbnailsBox.set_style_class_name('workspace-thumbnails');
+            controls._group.set_child_above_sibling(controls._thumbnailsSlider, last);
+        }
+    }
+}
+
 function init(metadata) {}
 
 function enable() {
@@ -223,9 +245,15 @@ function enable() {
     // Add applications button
     applications_button = new CosmicTopBarButton(ViewSelector.ViewPage.APPS);
     Main.panel.addToStatusArea("cosmic_applications", applications_button, 1, "left");
+
+    // Move workspace picker to left side (TODO: RTL)
+    workspace_picker_direction(Main.overview._overview._controls, true);
 }
 
 function disable() {
+    // Move workspace picker to right side (TODO: RTL)
+    workspace_picker_direction(Main.overview._overview._controls, false);
+
     // Remove applications button
     applications_button.destroy();
     applications_button = null;
