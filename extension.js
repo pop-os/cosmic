@@ -1,6 +1,8 @@
-const { Atk, Clutter, GLib, GObject, St } = imports.gi;
+const { Atk, Clutter, Gio, GLib, GObject, St } = imports.gi;
 const AppDisplay = imports.ui.appDisplay;
 const AltTab = imports.ui.altTab;
+const ExtensionUtils = imports.misc.extensionUtils;
+const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const OverviewControls = imports.ui.overviewControls;
 const PanelMenu = imports.ui.panelMenu;
@@ -27,7 +29,7 @@ function inject(object, parameter, replacement) {
 
 var CosmicTopBarButton = GObject.registerClass(
 class CosmicTopBarButton extends PanelMenu.Button {
-    _init(page = null) {
+    _init(settings, page = null) {
         super._init(0.0, null, true);
         this.accessible_role = Atk.Role.TOGGLE_BUTTON;
 
@@ -36,8 +38,10 @@ class CosmicTopBarButton extends PanelMenu.Button {
         let name = "Activities";
         if (page === ViewSelector.ViewPage.APPS) {
             name = "Applications";
+            settings.bind("show-applications-button", this, "visible", Gio.SettingsBindFlags.DEFAULT);
         } else if (page === ViewSelector.ViewPage.WINDOWS) {
             name = "Workspaces";
+            settings.bind("show-workspaces-button", this, "visible", Gio.SettingsBindFlags.DEFAULT);
         }
         this.name = 'panel' + name;
         this.page = page;
@@ -237,13 +241,15 @@ function enable() {
     });
     Main.panel.statusArea.appMenu.actor.hide();
 
+    const settings = settings_new_schema(extension.metadata["settings-schema"]);
+
     // Add workspaces button
     //TODO: this removes the curved selection corner, do we care?
-    workspaces_button = new CosmicTopBarButton(ViewSelector.ViewPage.WINDOWS);
+    workspaces_button = new CosmicTopBarButton(settings, ViewSelector.ViewPage.WINDOWS);
     Main.panel.addToStatusArea("cosmic_workspaces", workspaces_button, 0, "left");
 
     // Add applications button
-    applications_button = new CosmicTopBarButton(ViewSelector.ViewPage.APPS);
+    applications_button = new CosmicTopBarButton(settings, ViewSelector.ViewPage.APPS);
     Main.panel.addToStatusArea("cosmic_applications", applications_button, 1, "left");
 
     // Move workspace picker to left side (TODO: RTL)
@@ -312,4 +318,22 @@ function disable() {
        let injection = injections[i];
        injection["object"][injection["parameter"]] = injection["value"];
     }
+}
+
+function settings_new_schema(schema) {
+    const GioSSS = Gio.SettingsSchemaSource;
+    const schemaDir = extension.dir.get_child("schemas");
+
+    let schemaSource = schemaDir.query_exists(null) ?
+        GioSSS.new_from_directory(schemaDir.get_path(), GioSSS.get_default(), false) :
+        GioSSS.get_default();
+
+    const schemaObj = schemaSource.lookup(schema, true);
+
+    if (!schemaObj) {
+        throw new Error("Schema " + schema + " could not be found for extension "
+            + extension.metadata.uuid + ". Please check your installation.")
+    }
+
+    return new Gio.Settings({ settings_schema: schemaObj });
 }

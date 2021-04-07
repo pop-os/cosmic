@@ -2,7 +2,7 @@ Source: pop-cosmic
 Section: gnome
 Priority: optional
 Maintainer: Jeremy Soller <jeremy@system76.com>
-Build-Depends: debhelper (>= 10)
+Build-Depends: debhelper (>= 10), libglib2.0-bin
 Standards-Version: 3.9.8
 Homepage: https://github.com/pop-os/cosmic
 Vcs-Git: https://github.com/pop-os/cosmic.git

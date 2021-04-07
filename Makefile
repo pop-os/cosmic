@@ -14,10 +14,15 @@ $(info UUID is "$(UUID)")
 
 .PHONY: all clean install zip-file
 
-all: extension.js metadata.json
+all: extension.js metadata.json schemas/org.gnome.shell.extensions.pop-cosmic.gschema.xml schemas/gschemas.compiled
 	rm -rf build
-	mkdir -p build
-	cp $^ build
+	for i in $^ ; do \
+		mkdir -p build/$$(dirname $$i) ; \
+		cp $$i build/$$i ; \
+	done
+
+schemas/gschemas.compiled: schemas/*.gschema.xml
+	glib-compile-schemas schemas
 
 clean:
 	rm -rf build

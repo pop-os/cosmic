@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema id="org.gnome.shell.extensions.pop-cosmic" path="/org/gnome/shell/extensions/pop-cosmic/">
+        <key type="b" name="show-applications-button">
+            <default>true</default>
+        </key>
+        <key type="b" name="show-workspaces-button">
+            <default>true</default>
+        </key>
+    </schema>
+</schemalist>
