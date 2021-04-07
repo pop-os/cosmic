@@ -249,16 +249,18 @@ function enable() {
     // Move workspace picker to left side (TODO: RTL)
     workspace_picker_direction(Main.overview._overview._controls, true);
 
-    // Hide search
+    // Hide search and modify background
     Main.overview._overview._searchEntry.hide();
     // This signal cannot be connected until Main.overview is initialized
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         if (Main.overview._initCalled) {
             search_signal_page_changed = Main.overview.viewSelector.connect('page-changed', () => {
                 if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
-                        Main.overview._overview._searchEntry.hide();
+                    Main.overview._overview._searchEntry.hide();
+                    Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
                 } else {
                     Main.overview._overview._searchEntry.show();
+                    Main.overview._overview.add_style_class_name("cosmic-solid-bg");
                 }
             });
             return GLib.SOURCE_REMOVE;
@@ -266,6 +268,7 @@ function enable() {
             return GLib.SOURCE_CONTINUE;
         }
     });
+
 }
 
 function disable() {
@@ -275,6 +278,9 @@ function disable() {
         search_signal_page_changed = null;
     }
     Main.overview._overview._searchEntry.show();
+
+    // Reset background changes
+    Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
 
     // Move workspace picker to right side (TODO: RTL)
     workspace_picker_direction(Main.overview._overview._controls, false);
