@@ -248,9 +248,34 @@ function enable() {
 
     // Move workspace picker to left side (TODO: RTL)
     workspace_picker_direction(Main.overview._overview._controls, true);
+
+    // Hide search
+    Main.overview._overview._searchEntry.hide();
+    // This signal cannot be connected until Main.overview is initialized
+    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        if (Main.overview._initCalled) {
+            search_signal_page_changed = Main.overview.viewSelector.connect('page-changed', () => {
+                if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
+                        Main.overview._overview._searchEntry.hide();
+                } else {
+                    Main.overview._overview._searchEntry.show();
+                }
+            });
+            return GLib.SOURCE_REMOVE;
+        } else {
+            return GLib.SOURCE_CONTINUE;
+        }
+    });
 }
 
 function disable() {
+    // Show search
+    if (search_signal_page_changed !== null) {
+        Main.overview.viewSelector.disconnect(search_signal_page_changed);
+        search_signal_page_changed = null;
+    }
+    Main.overview._overview._searchEntry.show();
+
     // Move workspace picker to right side (TODO: RTL)
     workspace_picker_direction(Main.overview._overview._controls, false);
 
@@ -267,10 +292,13 @@ function disable() {
     appMenu_signal_show = null;
     Main.panel.statusArea.appMenu.actor.show();
 
-    // Show activities
+    // Show activities button
     Main.panel.statusArea.activities.actor.disconnect(activities_signal_show);
     activities_signal_show = null;
     Main.panel.statusArea.activities.actor.show();
+
+    // Show search
+    Main.overview._overview._searchEntry.show();
 
     // Remove injections
     let i;
