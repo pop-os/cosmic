@@ -87,7 +87,7 @@ class CosmicTopBarButton extends PanelMenu.Button {
     }
 
     toggle() {
-        log(this.name + " toggle: " + this.is_active());
+        //log(this.name + " toggle: " + this.is_active());
         if (this.is_active()) {
             Main.overview.hide();
         } else {
@@ -101,7 +101,7 @@ class CosmicTopBarButton extends PanelMenu.Button {
     }
 
     update() {
-        log(this.name + " update: " + this.is_active());
+        //log(this.name + " update: " + this.is_active());
         if (this.is_active()) {
             this.add_style_pseudo_class('overview');
             this.add_accessible_state(Atk.StateType.CHECKED);
@@ -230,16 +230,16 @@ function enable() {
     });
 
     // Hide activities button
-    activities_signal_show = Main.panel.statusArea.activities.actor.connect("show", function() {
-        Main.panel.statusArea.activities.actor.hide();
+    activities_signal_show = Main.panel.statusArea.activities.connect("show", function() {
+        Main.panel.statusArea.activities.hide();
     });
-    Main.panel.statusArea.activities.actor.hide();
+    Main.panel.statusArea.activities.hide();
 
     // Hide app menu
-    appMenu_signal_show = Main.panel.statusArea.appMenu.actor.connect("show", function() {
-        Main.panel.statusArea.appMenu.actor.hide();
+    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function() {
+        Main.panel.statusArea.appMenu.hide();
     });
-    Main.panel.statusArea.appMenu.actor.hide();
+    Main.panel.statusArea.appMenu.hide();
 
     const settings = settings_new_schema(extension.metadata["settings-schema"]);
 
@@ -300,14 +300,14 @@ function disable() {
     workspaces_button = null;
 
     // Show app menu
-    Main.panel.statusArea.appMenu.actor.disconnect(appMenu_signal_show);
+    Main.panel.statusArea.appMenu.disconnect(appMenu_signal_show);
     appMenu_signal_show = null;
-    Main.panel.statusArea.appMenu.actor.show();
+    Main.panel.statusArea.appMenu.show();
 
     // Show activities button
-    Main.panel.statusArea.activities.actor.disconnect(activities_signal_show);
+    Main.panel.statusArea.activities.disconnect(activities_signal_show);
     activities_signal_show = null;
-    Main.panel.statusArea.activities.actor.show();
+    Main.panel.statusArea.activities.show();
 
     // Show search
     Main.overview._overview._searchEntry.show();
