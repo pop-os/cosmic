@@ -30,24 +30,110 @@ function inject(object, parameter, replacement) {
     object[parameter] = replacement;
 }
 
+function with_pop_shell(callback) {
+    let pop_shell = Main.extensionManager.lookup("pop-shell@system76.com");
+    if (pop_shell) {
+        let ext = pop_shell.stateObj.ext;
+        if (ext) {
+            return callback(ext);
+        }
+    }
+}
+
+var OVERVIEW_WORKSPACES = "workspaces";
+var OVERVIEW_APPLICATIONS = "applications";
+var OVERVIEW_LAUNCHER = "launcher";
+
+function overview_visible(kind) {
+    log("animationInProgress: " + Main.overview.animationInProgress);
+    log("visible: " + Main.overview.visible);
+    log("visibleTarget: " + Main.overview.visibleTarget);
+    if (kind == OVERVIEW_WORKSPACES) {
+        if (Main.overview.visibleTarget) {
+            if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.WINDOWS) {
+                return true;
+            }
+        }
+    } else if (kind == OVERVIEW_APPLICATIONS) {
+        if (Main.overview.visibleTarget) {
+            if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.APPS) {
+                return true;
+            }
+        }
+    } else if (kind == OVERVIEW_LAUNCHER) {
+        if (with_pop_shell((ext) => {
+            return ext.window_search.dialog.visible;
+        }) === true) {
+            return true;
+        }
+    } else {
+        if (Main.overview.visibleTarget) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function overview_show(kind) {
+    log("overview_show: " + kind);
+    if (kind == OVERVIEW_WORKSPACES) {
+        Main.overview.viewSelector._showAppsButton.checked = false;
+        Main.overview.show();
+    } else if (kind == OVERVIEW_APPLICATIONS) {
+        Main.overview.viewSelector._showAppsButton.checked = true;
+        Main.overview.show();
+    } else if (kind == OVERVIEW_LAUNCHER) {
+        with_pop_shell((ext) => {
+            ext.tiler.exit(ext);
+            ext.window_search.load_desktop_files();
+            ext.window_search.open(ext);
+        });
+    } else {
+        Main.overview.show();
+    }
+}
+
+function overview_hide(kind) {
+    log("overview_hide: " + kind);
+    if (kind == OVERVIEW_LAUNCHER) {
+        with_pop_shell((ext) => {
+            ext.exit_modes();
+        });
+    } else {
+        Main.overview.hide();
+    }
+}
+
+function overview_toggle(kind) {
+    log("overview_toggle: " + kind);
+
+    if (Main.overview.animationInProgress) {
+        // prevent accidental re-show
+    } else if (overview_visible(kind)) {
+        overview_hide(kind);
+    } else {
+        overview_show(kind);
+    }
+}
+
 var CosmicTopBarButton = GObject.registerClass(
 class CosmicTopBarButton extends PanelMenu.Button {
-    _init(settings, page = null) {
+    _init(settings, kind = null) {
         super._init(0.0, null, true);
         this.accessible_role = Atk.Role.TOGGLE_BUTTON;
 
         /* Translators: If there is no suitable word for "Activities"
            in your language, you can use the word for "Overview". */
         let name = "Activities";
-        if (page === ViewSelector.ViewPage.APPS) {
+        if (kind === OVERVIEW_APPLICATIONS) {
             name = "Applications";
             settings.bind("show-applications-button", this, "visible", Gio.SettingsBindFlags.DEFAULT);
-        } else if (page === ViewSelector.ViewPage.WINDOWS) {
+        } else if (kind == OVERVIEW_WORKSPACES) {
             name = "Workspaces";
             settings.bind("show-workspaces-button", this, "visible", Gio.SettingsBindFlags.DEFAULT);
         }
         this.name = 'panel' + name;
-        this.page = page;
+        this.kind = kind;
 
         this._label = new St.Label({ text: _(name),
                                      y_align: Clutter.ActorAlign.CENTER });
@@ -77,35 +163,12 @@ class CosmicTopBarButton extends PanelMenu.Button {
         this._xdndTimeOut = 0;
     }
 
-    is_active() {
-        if (Main.overview.visibleTarget) {
-            if (this.page !== null) {
-                return this.page === Main.overview.viewSelector.getActivePage();
-            } else {
-                return true;
-            }
-        } else {
-            return false;
-        }
-    }
-
     toggle() {
-        //log(this.name + " toggle: " + this.is_active());
-        if (this.is_active()) {
-            Main.overview.hide();
-        } else {
-            if (this.page === ViewSelector.ViewPage.APPS) {
-                Main.overview.viewSelector._showAppsButton.checked = true;
-            } else {
-                Main.overview.viewSelector._showAppsButton.checked = false;
-            }
-            Main.overview.show();
-        }
+        overview_toggle(this.kind);
     }
 
     update() {
-        //log(this.name + " update: " + this.is_active());
-        if (this.is_active()) {
+        if (overview_visible(this.kind)) {
             this.add_style_pseudo_class('overview');
             this.add_accessible_state(Atk.StateType.CHECKED);
         } else {
@@ -194,14 +257,14 @@ function workspace_picker_direction(controls, left) {
 }
 
 function overlay_key() {
-    Main.overview.toggle();
+    overview_toggle(OVERVIEW_WORKSPACES);
 }
 
 function init(metadata) {}
 
 function enable() {
     // Raise first window on alt-tab
-    inject(AltTab.AppSwitcherPopup.prototype, "_finish", function(timestamp) {
+    inject(AltTab.AppSwitcherPopup.prototype, "_finish", function (timestamp) {
         let appIcon = this._items[this._selectedIndex];
         if (this._currentWindow < 0)
             Main.activateWindow(appIcon.cachedWindows[0], timestamp);
@@ -212,13 +275,13 @@ function enable() {
     });
 
     // Always show workspaces picker
-    inject(Main.overview._overview._controls._thumbnailsSlider, "_getAlwaysZoomOut", function() {
+    inject(Main.overview._overview._controls._thumbnailsSlider, "_getAlwaysZoomOut", function () {
         return true;
     });
 
     // Pop Shop details
     let original_rebuildMenu = AppDisplay.AppIconMenu.prototype._rebuildMenu;
-    inject(AppDisplay.AppIconMenu.prototype, "_rebuildMenu", function() {
+    inject(AppDisplay.AppIconMenu.prototype, "_rebuildMenu", function () {
         let ret = original_rebuildMenu.apply(this, arguments);
 
         if (!this._source.app.is_window_backed()) {
@@ -234,6 +297,21 @@ function enable() {
         }
 
         return ret;
+    });
+
+    // Remove app "spring"
+    inject(Main.overview.viewSelector, '_animateIn', function (oldPage) {
+        if (oldPage)
+            oldPage.hide();
+
+        this.emit('page-empty');
+
+        this._activePage.show();
+
+        this._fadePageIn();
+    });
+    inject(Main.overview.viewSelector, '_animateOut', function (page) {
+        this._fadePageOut(page);
     });
 
     // Hide activities button
@@ -252,11 +330,11 @@ function enable() {
 
     // Add workspaces button
     //TODO: this removes the curved selection corner, do we care?
-    workspaces_button = new CosmicTopBarButton(settings, ViewSelector.ViewPage.WINDOWS);
+    workspaces_button = new CosmicTopBarButton(settings, OVERVIEW_WORKSPACES);
     Main.panel.addToStatusArea("cosmic_workspaces", workspaces_button, 0, "left");
 
     // Add applications button
-    applications_button = new CosmicTopBarButton(settings, ViewSelector.ViewPage.APPS);
+    applications_button = new CosmicTopBarButton(settings, OVERVIEW_APPLICATIONS);
     Main.panel.addToStatusArea("cosmic_applications", applications_button, 1, "left");
 
     // Move workspace picker to left side (TODO: RTL)
