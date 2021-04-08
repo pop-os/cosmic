@@ -1,4 +1,4 @@
-const { Atk, Clutter, Gio, GLib, GObject, St } = imports.gi;
+const { Atk, Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
 const AppDisplay = imports.ui.appDisplay;
 const AltTab = imports.ui.altTab;
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -6,7 +6,6 @@ const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const OverviewControls = imports.ui.overviewControls;
 const PanelMenu = imports.ui.panelMenu;
-const Shell = imports.gi.Shell;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
 const ViewSelector = imports.ui.viewSelector;
@@ -368,9 +367,33 @@ function enable() {
         if (!_a11ySettings.get_boolean(STICKY_KEYS_ENABLE))
             overlay_key();
     });
+
+    // Make applications shortcut hide/show overview
+    const SHELL_KEYBINDINGS_SCHEMA = 'org.gnome.shell.keybindings';
+    Main.wm.removeKeybinding('toggle-application-view');
+    Main.wm.addKeybinding(
+        'toggle-application-view',
+        new Gio.Settings({ schema_id: SHELL_KEYBINDINGS_SCHEMA }),
+        Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+        Shell.ActionMode.NORMAL |
+        Shell.ActionMode.OVERVIEW,
+        () => overview_toggle(OVERVIEW_APPLICATIONS)
+    );
 }
 
 function disable() {
+    // Restore applications shortcut
+    const SHELL_KEYBINDINGS_SCHEMA = 'org.gnome.shell.keybindings';
+    Main.wm.removeKeybinding('toggle-application-view');
+    Main.wm.addKeybinding(
+        'toggle-application-view',
+        new Gio.Settings({ schema_id: SHELL_KEYBINDINGS_SCHEMA }),
+        Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+        Shell.ActionMode.NORMAL |
+        Shell.ActionMode.OVERVIEW,
+        Main.overview.viewSelector._toggleAppsPage.bind(Main.overview.viewSelector)
+    );
+
     // Disconnect modified overlay key handler
     if (signal_overlay_key !== null) {
         global.display.disconnect(signal_overlay_key);
