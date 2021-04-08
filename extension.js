@@ -46,13 +46,13 @@ var OVERVIEW_LAUNCHER = "launcher";
 function overview_visible(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
         if (Main.overview.visibleTarget) {
-            if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.WINDOWS) {
+            if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
                 return true;
             }
         }
     } else if (kind == OVERVIEW_APPLICATIONS) {
         if (Main.overview.visibleTarget) {
-            if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.APPS) {
+            if (Main.overview.viewSelector.getActivePage() !== ViewSelector.ViewPage.WINDOWS) {
                 return true;
             }
         }
