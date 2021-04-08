@@ -15,6 +15,9 @@ let activities_signal_show = null;
 let appMenu_signal_show = null;
 let workspaces_button = null;
 let applications_button = null;
+let search_signal_page_changed = null;
+let signal_overlay_key = null;
+let original_signal_overlay_key = null;
 
 let injections = [];
 
@@ -190,6 +193,10 @@ function workspace_picker_direction(controls, left) {
     }
 }
 
+function overlay_key() {
+    Main.overview.toggle();
+}
+
 function init(metadata) {}
 
 function enable() {
@@ -275,9 +282,35 @@ function enable() {
         }
     });
 
+    // Block original overlay key handler
+    original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
+    if (original_signal_overlay_key !== null) {
+        global.display.block_signal_handler(original_signal_overlay_key);
+    }
+
+    // Connect modified overlay key handler
+    const A11Y_SCHEMA = 'org.gnome.desktop.a11y.keyboard';
+    const STICKY_KEYS_ENABLE = 'stickykeys-enable';
+    let _a11ySettings = new Gio.Settings({ schema_id: A11Y_SCHEMA });
+    signal_overlay_key = global.display.connect("overlay-key", () => {
+        if (!_a11ySettings.get_boolean(STICKY_KEYS_ENABLE))
+            overlay_key();
+    });
 }
 
 function disable() {
+    // Disconnect modified overlay key handler
+    if (signal_overlay_key !== null) {
+        global.display.disconnect(signal_overlay_key);
+        signal_overlay_key = null;
+    }
+
+    // Unblock original overlay key handler
+    if (original_signal_overlay_key !== null) {
+        global.display.unblock_signal_handler(original_signal_overlay_key);
+        original_signal_overlay_key = null;
+    }
+
     // Show search
     if (search_signal_page_changed !== null) {
         Main.overview.viewSelector.disconnect(search_signal_page_changed);
@@ -308,9 +341,6 @@ function disable() {
     Main.panel.statusArea.activities.disconnect(activities_signal_show);
     activities_signal_show = null;
     Main.panel.statusArea.activities.show();
-
-    // Show search
-    Main.overview._overview._searchEntry.show();
 
     // Remove injections
     let i;
