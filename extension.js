@@ -79,6 +79,7 @@ function overview_show(kind) {
         Main.overview.viewSelector._showAppsButton.checked = true;
         Main.overview.show();
     } else if (kind == OVERVIEW_LAUNCHER) {
+        Main.overview.hide();
         with_pop_shell((ext) => {
             ext.tiler.exit(ext);
             ext.window_search.load_desktop_files();
