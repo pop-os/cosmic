@@ -45,9 +45,6 @@ var OVERVIEW_APPLICATIONS = "applications";
 var OVERVIEW_LAUNCHER = "launcher";
 
 function overview_visible(kind) {
-    log("animationInProgress: " + Main.overview.animationInProgress);
-    log("visible: " + Main.overview.visible);
-    log("visibleTarget: " + Main.overview.visibleTarget);
     if (kind == OVERVIEW_WORKSPACES) {
         if (Main.overview.visibleTarget) {
             if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.WINDOWS) {
@@ -75,7 +72,6 @@ function overview_visible(kind) {
 }
 
 function overview_show(kind) {
-    log("overview_show: " + kind);
     if (kind == OVERVIEW_WORKSPACES) {
         Main.overview.viewSelector._showAppsButton.checked = false;
         Main.overview.show();
@@ -94,7 +90,6 @@ function overview_show(kind) {
 }
 
 function overview_hide(kind) {
-    log("overview_hide: " + kind);
     if (kind == OVERVIEW_LAUNCHER) {
         with_pop_shell((ext) => {
             ext.exit_modes();
@@ -105,8 +100,6 @@ function overview_hide(kind) {
 }
 
 function overview_toggle(kind) {
-    log("overview_toggle: " + kind);
-
     if (Main.overview.animationInProgress) {
         // prevent accidental re-show
     } else if (overview_visible(kind)) {
