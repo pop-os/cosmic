@@ -15,7 +15,7 @@ let activities_signal_show = null;
 let appMenu_signal_show = null;
 let workspaces_button = null;
 let applications_button = null;
-let search_signal_page_empty = null;
+let search_signal_page_changed = null;
 let signal_overlay_key = null;
 let original_signal_overlay_key = null;
 
@@ -339,7 +339,7 @@ function enable() {
     // This signal cannot be connected until Main.overview is initialized
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         if (Main.overview._initCalled) {
-            search_signal_page_empty = Main.overview.viewSelector.connect('page-empty', () => {
+            search_signal_page_changed = Main.overview.viewSelector.connect('page-changed', () => {
                 if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
                     Main.overview._overview._searchEntry.hide();
                     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
@@ -384,9 +384,9 @@ function disable() {
     }
 
     // Show search
-    if (search_signal_page_empty !== null) {
-        Main.overview.viewSelector.disconnect(search_signal_page_empty);
-        search_signal_page_empty = null;
+    if (search_signal_page_changed !== null) {
+        Main.overview.viewSelector.disconnect(search_signal_page_changed);
+        search_signal_page_changed = null;
     }
     Main.overview._overview._searchEntry.show();
 
