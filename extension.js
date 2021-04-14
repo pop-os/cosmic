@@ -250,7 +250,7 @@ function workspace_picker_direction(controls, left) {
 }
 
 function overlay_key() {
-    overview_toggle(OVERVIEW_WORKSPACES);
+    overview_toggle(OVERVIEW_LAUNCHER);
 }
 
 function init(metadata) {}
