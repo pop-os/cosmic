@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
+    <enum id='org.gnome.shell.extensions.pop-cosmic.overview'>
+        <value value='0' nick='WORKSPACES'/>
+        <value value='1' nick='APPLICATIONS'/>
+        <value value='2' nick='LAUNCHER'/>
+    </enum>
     <schema id="org.gnome.shell.extensions.pop-cosmic" path="/org/gnome/shell/extensions/pop-cosmic/">
+        <key name="overlay-key-action" enum="org.gnome.shell.extensions.pop-cosmic.overview">
+          <default>'LAUNCHER'</default>
+          <summary>Overlay key action</summary>
+          <description>Controls the action of the overlay key, typically Super</description>
+        </key>
         <key type="b" name="show-applications-button">
             <default>true</default>
         </key>

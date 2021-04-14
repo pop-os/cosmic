@@ -39,9 +39,9 @@ function with_pop_shell(callback) {
     }
 }
 
-var OVERVIEW_WORKSPACES = "workspaces";
-var OVERVIEW_APPLICATIONS = "applications";
-var OVERVIEW_LAUNCHER = "launcher";
+var OVERVIEW_WORKSPACES = 0;
+var OVERVIEW_APPLICATIONS = 1;
+var OVERVIEW_LAUNCHER = 2;
 
 function overview_visible(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
@@ -249,8 +249,17 @@ function workspace_picker_direction(controls, left) {
     }
 }
 
+var overlay_key_action = OVERVIEW_LAUNCHER;
+
 function overlay_key() {
-    overview_toggle(OVERVIEW_LAUNCHER);
+    overview_toggle(overlay_key_action);
+}
+
+function overlay_key_changed(settings) {
+    if (overview_visible(overlay_key_action)) {
+        overview_hide(overlay_key_action);
+    }
+    overlay_key_action = settings.get_enum("overlay-key-action");
 }
 
 function init(metadata) {}
@@ -320,6 +329,12 @@ function enable() {
     Main.panel.statusArea.appMenu.hide();
 
     const settings = settings_new_schema(extension.metadata["settings-schema"]);
+
+    // Load overlay key action and keep it up to date with settings
+    overlay_key_changed(settings);
+    settings.connect("changed::overlay-key-action", () => {
+        overlay_key_changed(settings);
+    });
 
     // Add workspaces button
     //TODO: this removes the curved selection corner, do we care?
