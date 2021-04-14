@@ -5,6 +5,11 @@
         <value value='1' nick='APPLICATIONS'/>
         <value value='2' nick='LAUNCHER'/>
     </enum>
+    <enum id='org.gnome.shell.extensions.pop-cosmic.clock'>
+        <value value='0' nick='CENTER'/>
+        <value value='1' nick='LEFT'/>
+        <value value='2' nick='RIGHT'/>
+    </enum>
     <schema id="org.gnome.shell.extensions.pop-cosmic" path="/org/gnome/shell/extensions/pop-cosmic/">
         <key name="overlay-key-action" enum="org.gnome.shell.extensions.pop-cosmic.overview">
           <default>'LAUNCHER'</default>
@@ -16,6 +21,9 @@
         </key>
         <key type="b" name="show-workspaces-button">
             <default>true</default>
+        </key>
+        <key name="clock-alignment" enum="org.gnome.shell.extensions.pop-cosmic.clock">
+            <default>'CENTER'</default>
         </key>
     </schema>
 </schemalist>
