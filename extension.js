@@ -43,6 +43,10 @@ var OVERVIEW_WORKSPACES = 0;
 var OVERVIEW_APPLICATIONS = 1;
 var OVERVIEW_LAUNCHER = 2;
 
+const CLOCK_CENTER = 0;
+const CLOCK_LEFT = 1;
+const CLOCK_RIGHT = 2;
+
 function overview_visible(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
         if (Main.overview.visibleTarget) {
@@ -106,6 +110,22 @@ function overview_toggle(kind) {
         overview_hide(kind);
     } else {
         overview_show(kind);
+    }
+}
+
+function clock_alignment(alignment) {
+    const dateMenu = Main.panel.statusArea['dateMenu'];
+    const parent = dateMenu.get_parent();
+    if (parent != null) {
+        parent.remove_child (dateMenu);
+    }
+
+    if (alignment == CLOCK_LEFT) {
+        Main.panel._leftBox.add_actor(dateMenu);
+    } else if (alignment == CLOCK_RIGHT) {
+        Main.panel._rightBox.insert_child_at_index(dateMenu, 0);
+    } else {
+        Main.panel._centerBox.add_actor(dateMenu);
     }
 }
 
@@ -394,6 +414,11 @@ function enable() {
         Shell.ActionMode.OVERVIEW,
         () => overview_toggle(OVERVIEW_APPLICATIONS)
     );
+
+    clock_alignment(settings.get_enum("clock-alignment"));
+    settings.connect("changed::clock-alignment", () => {
+        clock_alignment(settings.get_enum("clock-alignment"));
+    });
 }
 
 function disable() {
@@ -458,6 +483,8 @@ function disable() {
        let injection = injections[i];
        injection["object"][injection["parameter"]] = injection["value"];
     }
+
+    clock_alignment(CLOCK_CENTER);
 }
 
 function settings_new_schema(schema) {
