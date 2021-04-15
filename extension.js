@@ -115,17 +115,18 @@ function overview_toggle(kind) {
 
 function clock_alignment(alignment) {
     const dateMenu = Main.panel.statusArea['dateMenu'];
-    const parent = dateMenu.get_parent();
+    const container = dateMenu.container;
+    const parent = container.get_parent();
     if (parent != null) {
-        parent.remove_child (dateMenu);
+        parent.remove_child (container);
     }
 
     if (alignment == CLOCK_LEFT) {
-        Main.panel._leftBox.add_actor(dateMenu);
+        Main.panel._leftBox.add_actor(container);
     } else if (alignment == CLOCK_RIGHT) {
-        Main.panel._rightBox.insert_child_at_index(dateMenu, 0);
+        Main.panel._rightBox.insert_child_at_index(container, 0);
     } else {
-        Main.panel._centerBox.add_actor(dateMenu);
+        Main.panel._centerBox.add_actor(container);
     }
 }
 
