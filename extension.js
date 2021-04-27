@@ -283,6 +283,74 @@ function overlay_key_changed(settings) {
     overlay_key_action = settings.get_enum("overlay-key-action");
 }
 
+
+function switch_workspace(direction) {
+    // Adapted from _showWorkspaceSwitcher
+    let workspaceManager = global.display.get_workspace_manager();
+
+    // Do not switch if workspaces are disabled
+    if (!Main.sessionMode.hasWorkspaces) {
+        return;
+    }
+
+    // Do not switch if there is only one workspace
+    if (workspaceManager.n_workspaces == 1) {
+        return;
+    }
+
+    // Do not switch if workspaces are vertical but direction is not
+    if (workspaceManager.layout_rows == -1 &&
+        direction != Meta.MotionDirection.UP &&
+        direction != Meta.MotionDirection.DOWN) {
+        return;
+    }
+
+    // Do not switch if workspaces are horizontal but direction is not
+    if (workspaceManager.layout_columns == -1 &&
+        direction != Meta.MotionDirection.LEFT &&
+        direction != Meta.MotionDirection.RIGHT) {
+        return;
+    }
+
+    // Find active workspace and new workspace in switch direction
+    let activeWorkspace = workspaceManager.get_active_workspace();
+    let newWorkspace = activeWorkspace.get_neighbor(direction);
+
+    // If the new workspace is different from the active one, switch to it
+    if (newWorkspace != activeWorkspace) {
+        newWorkspace.activate(global.get_current_time());
+    }
+}
+
+var GESTURE_UP = 0;
+var GESTURE_DOWN = 1;
+var GESTURE_LEFT = 2;
+var GESTURE_RIGHT = 3;
+
+function gesture(kind) {
+    if (kind === GESTURE_UP) {
+        switch_workspace(Meta.MotionDirection.UP);
+    } else if (kind === GESTURE_DOWN) {
+        switch_workspace(Meta.MotionDirection.DOWN);
+    } else if (kind === GESTURE_LEFT) {
+        if (overview_visible(OVERVIEW_WORKSPACES)) {
+            overview_hide(OVERVIEW_WORKSPACES);
+        } else if (overview_visible(OVERVIEW_APPLICATIONS)) {
+            overview_hide(OVERVIEW_APPLICATIONS);
+        } else {
+            overview_show(OVERVIEW_WORKSPACES);
+        }
+    } else if (kind === GESTURE_RIGHT) {
+        if (overview_visible(OVERVIEW_WORKSPACES)) {
+            overview_hide(OVERVIEW_WORKSPACES);
+        } else if (overview_visible(OVERVIEW_APPLICATIONS)) {
+            overview_hide(OVERVIEW_APPLICATIONS);
+        } else {
+            overview_show(OVERVIEW_APPLICATIONS);
+        }
+    }
+}
+
 function init(metadata) {}
 
 function enable() {
