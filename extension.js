@@ -4,11 +4,18 @@ const AltTab = imports.ui.altTab;
 const ExtensionUtils = imports.misc.extensionUtils;
 const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
+const Overview = imports.ui.overview;
 const OverviewControls = imports.ui.overviewControls;
 const PanelMenu = imports.ui.panelMenu;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
 const ViewSelector = imports.ui.viewSelector;
+
+// Make "backups" of the shell overview vignette function.
+const old_shadeBackgrounds = Main.overview._shadeBackgrounds;
+const old_unshadeBackgrounds = Main.overview._unshadeBackgrounds;
+
+var SHADE_ANIMATION_TIME = 200;
 
 let activities_signal_show = null;
 let appMenu_signal_show = null;
@@ -457,6 +464,35 @@ function enable() {
         }
     });
 
+    // Remove the code responsible for the vignette effect
+    // Main.overview._shadeBackgrounds = function () {
+    //     let backgrounds = Main.overview._backgroundGroup.get_children();
+    //     for (let i = 0; i < backgrounds.length; i++) {
+    //         backgrounds[i].brightness = 1.0;
+    //     }
+    // };
+
+    Main.overview._shadeBackgrounds = function () { };
+    
+    // Main.overview._unshadeBackgrounds = function () {
+    //     let backgrounds = Main.overview._backgroundGroup.get_children();
+    //     for (let i = 0; i < backgrounds.length; i++) {
+    //         backgrounds[i].ease_property('brightness', 1.0, {
+    //             duration: SHADE_ANIMATION_TIME,
+    //             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+    //         });
+    //         backgrounds[i].ease_property('vignette-sharpness', 0.0, {
+    //             duration: SHADE_ANIMATION_TIME,
+    //             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+    //         });
+    //     }
+    // };
+    
+    // Disable the vignette effect for each actor
+    Main.overview._backgroundGroup.get_children().forEach((actor) => {
+        actor.vignette = false;
+    }, null);
+
     // Block original overlay key handler
     original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
     if (original_signal_overlay_key !== null) {
@@ -545,6 +581,15 @@ function disable() {
     Main.panel.statusArea.activities.disconnect(activities_signal_show);
     activities_signal_show = null;
     Main.panel.statusArea.activities.show();
+
+    // Reassign the code responsible for the vignette effect
+    Main.overview._shadeBackgrounds = old_shadeBackgrounds;
+    Main.overview._unshadeBackgrounds = old_unshadeBackgrounds;
+
+    // Disable the vignette effect for each actor
+    Main.overview._backgroundGroup.get_children().forEach((actor) => {
+        actor.vignette = true;
+    }, null);
 
     // Remove injections
     let i;
