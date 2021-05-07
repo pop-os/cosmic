@@ -4,16 +4,11 @@ const AltTab = imports.ui.altTab;
 const ExtensionUtils = imports.misc.extensionUtils;
 const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
-const Overview = imports.ui.overview;
 const OverviewControls = imports.ui.overviewControls;
 const PanelMenu = imports.ui.panelMenu;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
 const ViewSelector = imports.ui.viewSelector;
-
-// Make "backups" of the shell overview vignette function.
-const old_shadeBackgrounds = Main.overview._shadeBackgrounds;
-const old_unshadeBackgrounds = Main.overview._unshadeBackgrounds;
 
 let activities_signal_show = null;
 let appMenu_signal_show = null;
