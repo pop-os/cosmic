@@ -457,6 +457,31 @@ function enable() {
         }
     });
 
+    inject(Main.overview, '_shadeBackgrounds', function () {
+        // Remove the code responsible for the vignette effect
+        this._backgroundGroup.get_children().forEach((background) => {
+            background.brightness = 1.0;
+            background.opacity = 255;
+
+            // VERY IMPORTANT: This somehow removes the initial workspaces 
+            // darkening. Not sure how, but it does.
+            if(background.content == undefined) {
+                // Shell version 3.36
+                background.vignette = false;
+                background.brightness = 1.0;
+            } else {
+                // Shell version >= 3.38
+                background.content.vignette = false;
+                background.content.brightness = 1.0;
+            }
+        })
+    });
+
+    // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
+    inject(Main.overview, '_unshadeBackgrounds', function () {  
+        return true;
+    });
+
     // Block original overlay key handler
     original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
     if (original_signal_overlay_key !== null) {
@@ -545,6 +570,11 @@ function disable() {
     Main.panel.statusArea.activities.disconnect(activities_signal_show);
     activities_signal_show = null;
     Main.panel.statusArea.activities.show();
+
+    // Enable the vignette effect for each actor
+    Main.overview._backgroundGroup.get_children().forEach((actor) => {
+        actor.vignette = true;
+    }, null);
 
     // Remove injections
     let i;
