@@ -462,9 +462,8 @@ function enable() {
         }
     });
 
-    // Remove the code responsible for the vignette effect
-    // FIXME GNOME shell bug here: changing opacity to an inferior level does not update the opacity
-    Main.overview._shadeBackgrounds = function () {
+    inject(Main.overview, '_shadeBackgrounds', function () {
+        // Remove the code responsible for the vignette effect
         this._backgroundGroup.get_children().forEach((background) => {
             background.brightness = 1.0;
             background.opacity = 255;
@@ -481,11 +480,12 @@ function enable() {
                 background.content.brightness = 1.0;
             }
         })
-
-    }
+    });
 
     // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
-    Main.overview._unshadeBackgrounds = function () {  }
+    inject(Main.overview, '_unshadeBackgrounds', function () {  
+        return true;
+    });
 
     // Block original overlay key handler
     original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
@@ -575,10 +575,6 @@ function disable() {
     Main.panel.statusArea.activities.disconnect(activities_signal_show);
     activities_signal_show = null;
     Main.panel.statusArea.activities.show();
-
-    // Reassign the code responsible for the vignette effect
-    Main.overview._shadeBackgrounds = old_shadeBackgrounds;
-    Main.overview._unshadeBackgrounds = old_unshadeBackgrounds;
 
     // Enable the vignette effect for each actor
     Main.overview._backgroundGroup.get_children().forEach((actor) => {
