@@ -15,8 +15,6 @@ const ViewSelector = imports.ui.viewSelector;
 const old_shadeBackgrounds = Main.overview._shadeBackgrounds;
 const old_unshadeBackgrounds = Main.overview._unshadeBackgrounds;
 
-var SHADE_ANIMATION_TIME = 200;
-
 let activities_signal_show = null;
 let appMenu_signal_show = null;
 let workspaces_button = null;
@@ -465,33 +463,29 @@ function enable() {
     });
 
     // Remove the code responsible for the vignette effect
-    // Main.overview._shadeBackgrounds = function () {
-    //     let backgrounds = Main.overview._backgroundGroup.get_children();
-    //     for (let i = 0; i < backgrounds.length; i++) {
-    //         backgrounds[i].brightness = 1.0;
-    //     }
-    // };
+    // FIXME GNOME shell bug here: changing opacity to an inferior level does not update the opacity
+    Main.overview._shadeBackgrounds = function () {
+        this._backgroundGroup.get_children().forEach((background) => {
+            background.brightness = 1.0;
+            background.opacity = 255;
 
-    Main.overview._shadeBackgrounds = function () { };
-    
-    // Main.overview._unshadeBackgrounds = function () {
-    //     let backgrounds = Main.overview._backgroundGroup.get_children();
-    //     for (let i = 0; i < backgrounds.length; i++) {
-    //         backgrounds[i].ease_property('brightness', 1.0, {
-    //             duration: SHADE_ANIMATION_TIME,
-    //             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-    //         });
-    //         backgrounds[i].ease_property('vignette-sharpness', 0.0, {
-    //             duration: SHADE_ANIMATION_TIME,
-    //             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-    //         });
-    //     }
-    // };
-    
-    // Disable the vignette effect for each actor
-    Main.overview._backgroundGroup.get_children().forEach((actor) => {
-        actor.vignette = false;
-    }, null);
+            // VERY IMPORTANT: This somehow removes the initial workspaces 
+            // darkening. Not sure how, but it does.
+            if(background.content == undefined) {
+                // Shell version 3.36
+                background.vignette = false;
+                background.brightness = 1.0;
+            } else {
+                // Shell version >= 3.38
+                background.content.vignette = false;
+                background.content.brightness = 1.0;
+            }
+        })
+
+    }
+
+    // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
+    Main.overview._unshadeBackgrounds = function () {  }
 
     // Block original overlay key handler
     original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
@@ -586,7 +580,7 @@ function disable() {
     Main.overview._shadeBackgrounds = old_shadeBackgrounds;
     Main.overview._unshadeBackgrounds = old_unshadeBackgrounds;
 
-    // Disable the vignette effect for each actor
+    // Enable the vignette effect for each actor
     Main.overview._backgroundGroup.get_children().forEach((actor) => {
         actor.vignette = true;
     }, null);
