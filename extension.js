@@ -121,7 +121,7 @@ function clock_alignment(alignment) {
         parent.remove_child (container);
     }
 
-    var banner_width = Main.panel.statusArea.dateMenu._messageList.actor.width;
+    var banner_width = Main.panel.statusArea.dateMenu._messageList.width;
     var banner_offset = Main.layoutManager.monitors[0].width - banner_width;
     Main.messageTray._bannerBin.width = banner_width;
     if (alignment == CLOCK_LEFT) {
