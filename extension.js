@@ -121,12 +121,18 @@ function clock_alignment(alignment) {
         parent.remove_child (container);
     }
 
+    var banner_width = Main.panel.statusArea.dateMenu._messageList.actor.width;
+    var banner_offset = Main.layoutManager.monitors[0].width - banner_width;
+    Main.messageTray._bannerBin.width = banner_width;
     if (alignment == CLOCK_LEFT) {
         Main.panel._leftBox.insert_child_at_index(container, 0);
+        Main.messageTray._bannerBin.x = -banner_offset;
     } else if (alignment == CLOCK_RIGHT) {
         Main.panel._rightBox.add_actor(container);
+        Main.messageTray._bannerBin.x = banner_offset;
     } else {
         Main.panel._centerBox.add_actor(container);
+        Main.messageTray._bannerBin.x = 0;
     }
 }
 
