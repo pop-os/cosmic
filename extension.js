@@ -122,9 +122,9 @@ function clock_alignment(alignment) {
     }
 
     if (alignment == CLOCK_LEFT) {
-        Main.panel._leftBox.add_actor(container);
+        Main.panel._leftBox.insert_child_at_index(container, 0);
     } else if (alignment == CLOCK_RIGHT) {
-        Main.panel._rightBox.insert_child_at_index(container, 0);
+        Main.panel._rightBox.add_actor(container);
     } else {
         Main.panel._centerBox.add_actor(container);
     }
@@ -463,7 +463,7 @@ function enable() {
             background.brightness = 1.0;
             background.opacity = 255;
 
-            // VERY IMPORTANT: This somehow removes the initial workspaces 
+            // VERY IMPORTANT: This somehow removes the initial workspaces
             // darkening. Not sure how, but it does.
             if(background.content == undefined) {
                 // Shell version 3.36
@@ -478,7 +478,7 @@ function enable() {
     });
 
     // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
-    inject(Main.overview, '_unshadeBackgrounds', function () {  
+    inject(Main.overview, '_unshadeBackgrounds', function () {
         return true;
     });
 
