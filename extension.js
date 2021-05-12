@@ -113,6 +113,7 @@ function overview_toggle(kind) {
     }
 }
 
+let indicatorPad = null;
 function clock_alignment(alignment) {
     const dateMenu = Main.panel.statusArea['dateMenu'];
     const container = dateMenu.container;
@@ -121,8 +122,9 @@ function clock_alignment(alignment) {
         parent.remove_child (container);
     }
 
-    var banner_width = Main.panel.statusArea.dateMenu._messageList.width;
-    var banner_offset = Main.layoutManager.monitors[0].width - banner_width;
+    const banner_width = Main.panel.statusArea.dateMenu._messageList.width;
+    const banner_offset = Main.layoutManager.monitors[0].width - banner_width;
+    let clock_padding = false;
     Main.messageTray._bannerBin.width = banner_width;
     if (alignment == CLOCK_LEFT) {
         Main.panel._leftBox.insert_child_at_index(container, 0);
@@ -133,6 +135,21 @@ function clock_alignment(alignment) {
     } else {
         Main.panel._centerBox.add_actor(container);
         Main.messageTray._bannerBin.x = 0;
+        clock_padding = true;
+    }
+
+    const dateMenuBox = dateMenu.get_child_at_index(0);
+    if (indicatorPad == null) {
+        indicatorPad = dateMenuBox.get_child_at_index(0);
+    }
+    if (clock_padding) {
+        if (indicatorPad.get_parent() == null) {
+            dateMenuBox.insert_child_at_index(indicatorPad, 0);
+        }
+    } else {
+        if (indicatorPad.get_parent() != null) {
+            dateMenuBox.remove_child(indicatorPad);
+        }
     }
 }
 
