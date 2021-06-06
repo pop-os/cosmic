@@ -203,6 +203,8 @@ class CosmicTopBarButton extends PanelMenu.Button {
             for (const signal of signals) GLib.source_remove(signal);
 
             if (this._xdndTimeOut !== null) GLib.source_remove(this._xdndTimeOut);
+
+            Gio.Settings.unbind(this, "visible");
         });
     }
 
