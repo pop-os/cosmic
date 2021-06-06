@@ -178,12 +178,12 @@ class CosmicTopBarButton extends PanelMenu.Button {
 
         this.label_actor = this._label;
 
-        Main.overview.connect('shown', () => {
-            this.update();
-        });
-        Main.overview.connect('hidden', () => {
-            this.update();
-        });
+        const perform_update = () => this.update();
+
+        const signals = [
+            Main.overview.connect('shown', perform_update),
+            Main.overview.connect('hidden', perform_update),
+        ];
 
 		// This signal cannot be connected until Main.overview is initialized
 		GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
@@ -197,7 +197,13 @@ class CosmicTopBarButton extends PanelMenu.Button {
             }
 		});
 
-        this._xdndTimeOut = 0;
+        this._xdndTimeOut = null;
+
+        this.connect('destroy', () => {
+            for (const signal of signals) GLib.source_remove(signal);
+
+            if (this._xdndTimeOut !== null) GLib.source_remove(this._xdndTimeOut);
+        });
     }
 
     toggle() {
@@ -218,7 +224,7 @@ class CosmicTopBarButton extends PanelMenu.Button {
         if (source != Main.xdndHandler)
             return DND.DragMotionResult.CONTINUE;
 
-        if (this._xdndTimeOut != 0)
+        if (this._xdndTimeOut !== null)
             GLib.source_remove(this._xdndTimeOut);
         this._xdndTimeOut = GLib.timeout_add(GLib.PRIORITY_DEFAULT, BUTTON_DND_ACTIVATION_TIMEOUT, () => {
             this._xdndToggleOverview();
@@ -266,8 +272,9 @@ class CosmicTopBarButton extends PanelMenu.Button {
         if (pickedActor == this && Main.overview.shouldToggleByCornerOrButton())
             this.toggle();
 
-        GLib.source_remove(this._xdndTimeOut);
-        this._xdndTimeOut = 0;
+        if (this._xdndTimeOut !== null) GLib.source_remove(this._xdndTimeOut);
+        this._xdndTimeOut = null;
+
         return GLib.SOURCE_REMOVE;
     }
 });
