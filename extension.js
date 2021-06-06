@@ -487,6 +487,31 @@ function enable() {
         }
     });
 
+    // Exit from overview on Esc of applications view
+    inject(Main.overview.viewSelector, '_onStageKeyPress', function (actor, event) {
+        if (Main.modalCount > 1)
+            return Clutter.EVENT_PROPAGATE;
+
+        let symbol = event.get_key_symbol();
+
+        if (symbol === Clutter.KEY_Escape) {
+            if (this._searchActive) this.reset();
+            Main.overview.hide();
+            return Clutter.EVENT_STOP;
+        } else if (this._shouldTriggerSearch(symbol)) {
+            this.startSearch(event);
+        } else if (!this._searchActive && !global.stage.key_focus) {
+            if (symbol === Clutter.KEY_Tab || symbol === Clutter.KEY_Down) {
+                this._activePage.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
+                return Clutter.EVENT_STOP;
+            } else if (symbol === Clutter.KEY_ISO_Left_Tab) {
+                this._activePage.navigate_focus(null, St.DirectionType.TAB_BACKWARD, false);
+                return Clutter.EVENT_STOP;
+            }
+        }
+        return Clutter.EVENT_PROPAGATE;
+      });
+
     inject(Main.overview, '_shadeBackgrounds', function () {
         // Remove the code responsible for the vignette effect
         this._backgroundGroup.get_children().forEach((background) => {
