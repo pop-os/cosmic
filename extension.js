@@ -499,7 +499,7 @@ function enable() {
             Main.overview.hide();
             return Clutter.EVENT_STOP;
         } else if (this._shouldTriggerSearch(symbol)) {
-            this.startSearch(event);
+            if (this._activePage === this._appsPage) this.startSearch(event);
         } else if (!this._searchActive && !global.stage.key_focus) {
             if (symbol === Clutter.KEY_Tab || symbol === Clutter.KEY_Down) {
                 this._activePage.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
