@@ -25,5 +25,8 @@
         <key name="clock-alignment" enum="org.gnome.shell.extensions.pop-cosmic.clock">
             <default>'CENTER'</default>
         </key>
+        <key type="b" name="workspace-picker-left">
+            <default>true</default>
+        </key>
     </schema>
 </schemalist>
