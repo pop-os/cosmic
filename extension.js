@@ -82,20 +82,22 @@ function workspace_picker_direction(controls, left) {
         let first = controls._group.get_first_child();
         if (first != controls._thumbnailsSlider) {
             controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.LEFT;
-            controls._thumbnailsBox.remove_style_class_name('workspace-thumbnails');
-            controls._thumbnailsBox.set_style_class_name('workspace-thumbnails workspace-thumbnails-left');
+            controls._thumbnailsBox.add_style_class_name('workspace-thumbnails-left');
             controls._group.set_child_below_sibling(controls._thumbnailsSlider, first)
         }
-    }
-    else {
+    } else {
         let last = controls._group.get_last_child();
         if (last != controls._thumbnailsSlider) {
             controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.RIGHT;
-            controls._thumbnailsBox.remove_style_class_name('workspace-thumbnails workspace-thumbnails-left');
-            controls._thumbnailsBox.set_style_class_name('workspace-thumbnails');
+            controls._thumbnailsBox.remove_style_class_name('workspace-thumbnails-left');
             controls._group.set_child_above_sibling(controls._thumbnailsSlider, last);
         }
     }
+
+    const handler_id = Main.overview.connect('showing', () => {
+        Main.overview.viewSelector._workspacesDisplay._updateWorkspacesActualGeometry();
+        Main.overview.disconnect(handler_id);
+    });
 }
 
 var overlay_key_action = OVERVIEW_LAUNCHER;
@@ -262,9 +264,6 @@ function enable() {
     applications_button = new CosmicTopBarButton(settings, OVERVIEW_APPLICATIONS);
     Main.panel.addToStatusArea("cosmic_applications", applications_button, 1, "left");
 
-    // Move workspace picker to left side (TODO: RTL)
-    workspace_picker_direction(Main.overview._overview._controls, true);
-
     // Hide search and modify background
     Main.overview._overview._searchEntry.hide();
     // This signal cannot be connected until Main.overview is initialized
@@ -365,6 +364,12 @@ function enable() {
     clock_alignment(settings.get_enum("clock-alignment"));
     settings.connect("changed::clock-alignment", () => {
         clock_alignment(settings.get_enum("clock-alignment"));
+    });
+
+    // Move workspace picker to left side (TODO: RTL)
+    workspace_picker_direction(Main.overview._overview._controls, settings.get_boolean("workspace-picker-left"));
+    settings.connect("changed::workspace-picker-left", () => {
+        workspace_picker_direction(Main.overview._overview._controls, settings.get_boolean("workspace-picker-left"));
     });
 }
 
