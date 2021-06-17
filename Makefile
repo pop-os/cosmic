@@ -10,11 +10,20 @@ INSTALLBASE = $(DESTDIR)/usr/share/gnome-shell/extensions
 endif
 INSTALLNAME = $(UUID)
 
+SRC = extension.js \
+      metadata.json \
+      overview.js \
+      prefs.js \
+      schemas/gschemas.compiled \
+      schemas/org.gnome.shell.extensions.pop-cosmic.gschema.xml \
+      settings.js \
+      topBarButton.js
+
 $(info UUID is "$(UUID)")
 
 .PHONY: all clean install zip-file
 
-all: extension.js metadata.json prefs.js schemas/org.gnome.shell.extensions.pop-cosmic.gschema.xml schemas/gschemas.compiled
+all: $(SRC)
 	rm -rf build
 	for i in $^ ; do \
 		mkdir -p build/$$(dirname $$i) ; \

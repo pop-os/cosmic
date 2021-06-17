@@ -14,7 +14,7 @@ function init() {
 function buildPrefsWidget() {
     const label = new Gtk.Label({
         label: "Configuration for the dock, the top bar, the workspaces overview, and\nother COSMIC components is available in the Settings application.",
-	justify: Gtk.Justification.CENTER,
+        justify: Gtk.Justification.CENTER,
     });
 
     const button = new Gtk.Button({

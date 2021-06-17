@@ -1,14 +1,18 @@
-const { Atk, Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
+const { Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
 const AppDisplay = imports.ui.appDisplay;
 const AltTab = imports.ui.altTab;
 const ExtensionUtils = imports.misc.extensionUtils;
 const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const OverviewControls = imports.ui.overviewControls;
-const PanelMenu = imports.ui.panelMenu;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
 const ViewSelector = imports.ui.viewSelector;
+
+var { OVERVIEW_WORKSPACES, OVERVIEW_APPLICATIONS, OVERVIEW_LAUNCHER } = extension.imports.overview;
+var { overview_visible, overview_show, overview_hide, overview_toggle } = extension.imports.overview;
+var { CosmicTopBarButton } = extension.imports.topBarButton;
+var { settings_new_schema } = extension.imports.settings;
 
 let activities_signal_show = null;
 let appMenu_signal_show = null;
@@ -29,89 +33,9 @@ function inject(object, parameter, replacement) {
     object[parameter] = replacement;
 }
 
-function with_pop_shell(callback) {
-    let pop_shell = Main.extensionManager.lookup("pop-shell@system76.com");
-    if (pop_shell) {
-        let ext = pop_shell.stateObj.ext;
-        if (ext) {
-            return callback(ext);
-        }
-    }
-}
-
-var OVERVIEW_WORKSPACES = 0;
-var OVERVIEW_APPLICATIONS = 1;
-var OVERVIEW_LAUNCHER = 2;
-
 const CLOCK_CENTER = 0;
 const CLOCK_LEFT = 1;
 const CLOCK_RIGHT = 2;
-
-function overview_visible(kind) {
-    if (kind == OVERVIEW_WORKSPACES) {
-        if (Main.overview.visibleTarget) {
-            if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
-                return true;
-            }
-        }
-    } else if (kind == OVERVIEW_APPLICATIONS) {
-        if (Main.overview.visibleTarget) {
-            if (Main.overview.viewSelector.getActivePage() !== ViewSelector.ViewPage.WINDOWS) {
-                return true;
-            }
-        }
-    } else if (kind == OVERVIEW_LAUNCHER) {
-        if (with_pop_shell((ext) => {
-            return ext.window_search.dialog.visible;
-        }) === true) {
-            return true;
-        }
-    } else {
-        if (Main.overview.visibleTarget) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function overview_show(kind) {
-    if (kind == OVERVIEW_WORKSPACES) {
-        Main.overview.viewSelector._showAppsButton.checked = false;
-        Main.overview.show();
-    } else if (kind == OVERVIEW_APPLICATIONS) {
-        Main.overview.viewSelector._showAppsButton.checked = true;
-        Main.overview.show();
-    } else if (kind == OVERVIEW_LAUNCHER) {
-        Main.overview.hide();
-        with_pop_shell((ext) => {
-            ext.tiler.exit(ext);
-            ext.window_search.load_desktop_files();
-            ext.window_search.open(ext);
-        });
-    } else {
-        Main.overview.show();
-    }
-}
-
-function overview_hide(kind) {
-    if (kind == OVERVIEW_LAUNCHER) {
-        with_pop_shell((ext) => {
-            ext.exit_modes();
-        });
-    } else {
-        Main.overview.hide();
-    }
-}
-
-function overview_toggle(kind) {
-    if (Main.overview.animationInProgress) {
-        // prevent accidental re-show
-    } else if (overview_visible(kind)) {
-        overview_hide(kind);
-    } else {
-        overview_show(kind);
-    }
-}
 
 let indicatorPad = null;
 function clock_alignment(alignment) {
@@ -152,134 +76,6 @@ function clock_alignment(alignment) {
         }
     }
 }
-
-var CosmicTopBarButton = GObject.registerClass(
-class CosmicTopBarButton extends PanelMenu.Button {
-    _init(settings, kind = null) {
-        super._init(0.0, null, true);
-        this.accessible_role = Atk.Role.TOGGLE_BUTTON;
-
-        /* Translators: If there is no suitable word for "Activities"
-           in your language, you can use the word for "Overview". */
-        let name = "Activities";
-        if (kind === OVERVIEW_APPLICATIONS) {
-            name = "Applications";
-            settings.bind("show-applications-button", this, "visible", Gio.SettingsBindFlags.DEFAULT);
-        } else if (kind == OVERVIEW_WORKSPACES) {
-            name = "Workspaces";
-            settings.bind("show-workspaces-button", this, "visible", Gio.SettingsBindFlags.DEFAULT);
-        }
-        this.name = 'panel' + name;
-        this.kind = kind;
-
-        this._label = new St.Label({ text: _(name),
-                                     y_align: Clutter.ActorAlign.CENTER });
-        this.add_actor(this._label);
-
-        this.label_actor = this._label;
-
-        const perform_update = () => this.update();
-
-        const signals = [
-            Main.overview.connect('shown', perform_update),
-            Main.overview.connect('hidden', perform_update),
-        ];
-
-		// This signal cannot be connected until Main.overview is initialized
-		GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            if (Main.overview._initCalled) {
-    			Main.overview.viewSelector.connect('page-changed', () => {
-    				this.update();
-    			});
-    			return GLib.SOURCE_REMOVE;
-            } else {
-                return GLib.SOURCE_CONTINUE;
-            }
-		});
-
-        this._xdndTimeOut = null;
-
-        this.connect('destroy', () => {
-            for (const signal of signals) GLib.source_remove(signal);
-
-            if (this._xdndTimeOut !== null) GLib.source_remove(this._xdndTimeOut);
-
-            Gio.Settings.unbind(this, "visible");
-        });
-    }
-
-    toggle() {
-        overview_toggle(this.kind);
-    }
-
-    update() {
-        if (overview_visible(this.kind)) {
-            this.add_style_pseudo_class('overview');
-            this.add_accessible_state(Atk.StateType.CHECKED);
-        } else {
-            this.remove_style_pseudo_class('overview');
-            this.remove_accessible_state(Atk.StateType.CHECKED);
-        }
-    }
-
-    handleDragOver(source, _actor, _x, _y, _time) {
-        if (source != Main.xdndHandler)
-            return DND.DragMotionResult.CONTINUE;
-
-        if (this._xdndTimeOut !== null)
-            GLib.source_remove(this._xdndTimeOut);
-        this._xdndTimeOut = GLib.timeout_add(GLib.PRIORITY_DEFAULT, BUTTON_DND_ACTIVATION_TIMEOUT, () => {
-            this._xdndToggleOverview();
-        });
-        GLib.Source.set_name_by_id(this._xdndTimeOut, '[gnome-shell] this._xdndToggleOverview');
-
-        return DND.DragMotionResult.CONTINUE;
-    }
-
-    vfunc_captured_event(event) {
-        if (event.type() == Clutter.EventType.BUTTON_PRESS ||
-            event.type() == Clutter.EventType.TOUCH_BEGIN) {
-            if (!Main.overview.shouldToggleByCornerOrButton())
-                return Clutter.EVENT_STOP;
-        }
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    vfunc_event(event) {
-        if (event.type() == Clutter.EventType.TOUCH_END ||
-            event.type() == Clutter.EventType.BUTTON_RELEASE) {
-            if (Main.overview.shouldToggleByCornerOrButton())
-                this.toggle();
-        }
-
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    vfunc_key_release_event(keyEvent) {
-        let symbol = keyEvent.keyval;
-        if (symbol == Clutter.KEY_Return || symbol == Clutter.KEY_space) {
-            if (Main.overview.shouldToggleByCornerOrButton()) {
-                this.toggle();
-                return Clutter.EVENT_STOP;
-            }
-        }
-
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    _xdndToggleOverview() {
-        let [x, y] = global.get_pointer();
-        let pickedActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
-
-        if (pickedActor == this && Main.overview.shouldToggleByCornerOrButton())
-            this.toggle();
-
-        if (this._xdndTimeOut !== null) GLib.source_remove(this._xdndTimeOut);
-        this._xdndTimeOut = null;
-
-        return GLib.SOURCE_REMOVE;
-    }
-});
 
 function workspace_picker_direction(controls, left) {
     if (left) {
@@ -641,22 +437,4 @@ function disable() {
     }
 
     clock_alignment(CLOCK_CENTER);
-}
-
-function settings_new_schema(schema) {
-    const GioSSS = Gio.SettingsSchemaSource;
-    const schemaDir = extension.dir.get_child("schemas");
-
-    let schemaSource = schemaDir.query_exists(null) ?
-        GioSSS.new_from_directory(schemaDir.get_path(), GioSSS.get_default(), false) :
-        GioSSS.get_default();
-
-    const schemaObj = schemaSource.lookup(schema, true);
-
-    if (!schemaObj) {
-        throw new Error("Schema " + schema + " could not be found for extension "
-            + extension.metadata.uuid + ". Please check your installation.")
-    }
-
-    return new Gio.Settings({ settings_schema: schemaObj });
 }
