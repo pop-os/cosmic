@@ -314,6 +314,11 @@ function enable() {
         this._backgroundGroup.get_children().forEach((background) => {
             background.brightness = 1.0;
             background.opacity = 255;
+            
+            // Give Applications a transparent background so it can fade in
+            if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.APPS) {
+                background.opacity = 0;
+            }
 
             // VERY IMPORTANT: This somehow removes the initial workspaces
             // darkening. Not sure how, but it does.
@@ -331,6 +336,10 @@ function enable() {
 
     // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
     inject(Main.overview, '_unshadeBackgrounds', function () {
+        // Avoid graphical glitches if the background was transparent
+        this._backgroundGroup.get_children().forEach((background) => {
+            background.opacity = 255;
+        })
         return true;
     });
 
