@@ -181,6 +181,18 @@ function gesture(kind) {
     }
 }
 
+function show_overview_backgrounds() {
+    Main.overview._backgroundGroup.get_children().forEach(background => {
+        background.visible = true;
+    });
+}
+
+function hide_primary_overview_backgrounds() {
+    Main.overview._backgroundGroup.get_children().forEach(background => {
+        background.visible = background.monitor != Main.layoutManager.primaryIndex;
+    });
+}
+
 function init(metadata) {}
 
 function enable() {
@@ -273,9 +285,11 @@ function enable() {
                 if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
                     Main.overview._overview._searchEntry.hide();
                     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
+                    show_overview_backgrounds();
                 } else {
                     Main.overview._overview._searchEntry.show();
                     Main.overview._overview.add_style_class_name("cosmic-solid-bg");
+                    hide_primary_overview_backgrounds();
                 }
             });
             return GLib.SOURCE_REMOVE;
@@ -310,16 +324,18 @@ function enable() {
       });
 
     inject(Main.overview, '_shadeBackgrounds', function () {
+        // Give Applications a transparent background so it can fade in
+        if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.APPS) {
+            hide_primary_overview_backgrounds();
+        } else {
+            show_overview_backgrounds();
+        }
+
         // Remove the code responsible for the vignette effect
         this._backgroundGroup.get_children().forEach((background) => {
             background.brightness = 1.0;
             background.opacity = 255;
             
-            // Give Applications a transparent background so it can fade in
-            if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.APPS) {
-                background.opacity = 0;
-            }
-
             // VERY IMPORTANT: This somehow removes the initial workspaces
             // darkening. Not sure how, but it does.
             if(background.content == undefined) {
@@ -336,10 +352,7 @@ function enable() {
 
     // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
     inject(Main.overview, '_unshadeBackgrounds', function () {
-        // Avoid graphical glitches if the background was transparent
-        this._backgroundGroup.get_children().forEach((background) => {
-            background.opacity = 255;
-        })
+        show_overview_backgrounds();
         return true;
     });
 
