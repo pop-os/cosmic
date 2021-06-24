@@ -323,6 +323,21 @@ function enable() {
         return Clutter.EVENT_PROPAGATE;
       });
 
+    inject(Main.overview.viewSelector, 'animateFromOverview', function () {
+        this._workspacesPage.opacity = 255;
+
+        this._workspacesDisplay.animateFromOverview(this._activePage != this._workspacesPage);
+
+        // Unlike default, don't change _showAppsButton until done hiding
+        const handler_id = Main.overview.connect('hidden', () => {
+            Main.overview.viewSelector._showAppsButton.checked = false;
+            Main.overview.disconnect(handler_id);
+        });
+
+        if (!this._workspacesDisplay.activeWorkspaceHasMaximizedWindows())
+            Main.overview.fadeInDesktop();
+    });
+
     inject(Main.overview, '_shadeBackgrounds', function () {
         // Give Applications a transparent background so it can fade in
         if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.APPS) {
@@ -352,7 +367,6 @@ function enable() {
 
     // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
     inject(Main.overview, '_unshadeBackgrounds', function () {
-        show_overview_backgrounds();
         return true;
     });
 
