@@ -328,11 +328,10 @@ function enable() {
 
         this._workspacesDisplay.animateFromOverview(this._activePage != this._workspacesPage);
 
-        // Unlike default, don't change _showAppsButton until done hiding
-        const handler_id = Main.overview.connect('hidden', () => {
-            Main.overview.viewSelector._showAppsButton.checked = false;
-            Main.overview.disconnect(handler_id);
-        });
+        // Don't show background while animating out of applications
+        this.block_signal_handler(search_signal_page_changed);
+        this._showAppsButton.checked = false;
+        this.unblock_signal_handler(search_signal_page_changed);
 
         if (!this._workspacesDisplay.activeWorkspaceHasMaximizedWindows())
             Main.overview.fadeInDesktop();
