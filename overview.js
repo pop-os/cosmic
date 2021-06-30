@@ -3,7 +3,7 @@ const ViewSelector = imports.ui.viewSelector;
 
 function with_pop_shell(callback) {
     let pop_shell = Main.extensionManager.lookup("pop-shell@system76.com");
-    if (pop_shell) {
+    if (pop_shell && pop_shell.stateObj) {
         let ext = pop_shell.stateObj.ext;
         if (ext) {
             return callback(ext);
