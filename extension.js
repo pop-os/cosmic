@@ -181,6 +181,10 @@ function gesture(kind) {
     }
 }
 
+function shell_theme_is_pop() {
+    return Main.getThemeStylesheet().get_path().startsWith("/usr/share/themes/Pop");
+}
+
 function show_overview_backgrounds() {
     Main.overview._backgroundGroup.get_children().forEach(background => {
         background.visible = true;
@@ -188,8 +192,9 @@ function show_overview_backgrounds() {
 }
 
 function hide_primary_overview_backgrounds() {
+    const is_pop = shell_theme_is_pop();
     Main.overview._backgroundGroup.get_children().forEach(background => {
-        background.visible = background.monitor != Main.layoutManager.primaryIndex;
+        background.visible = !is_pop || (background.monitor != Main.layoutManager.primaryIndex);
     });
 }
 
