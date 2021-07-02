@@ -182,7 +182,11 @@ function gesture(kind) {
 }
 
 function shell_theme_is_pop() {
-    return Main.getThemeStylesheet().get_path().startsWith("/usr/share/themes/Pop");
+    const stylesheet = Main.getThemeStylesheet();
+    if (stylesheet)
+        return stylesheet.get_path().startsWith("/usr/share/themes/Pop");
+    else
+        return true;
 }
 
 function show_overview_backgrounds() {
