@@ -297,6 +297,8 @@ function enable() {
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         if (Main.overview._initCalled) {
             search_signal_page_changed = Main.overview.viewSelector.connect('page-changed', () => {
+                Main.layoutManager._updateVisibility();
+
                 if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
                     Main.overview._overview._searchEntry.hide();
                     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
@@ -382,6 +384,15 @@ function enable() {
     // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
     inject(Main.overview, '_unshadeBackgrounds', function () {
         return true;
+    });
+
+    inject(Main.layoutManager, "_updateVisibility", function () {
+        let windowsVisible = (Main.sessionMode.hasWindows && !this._inOverview) || Main.overview.viewSelector._showAppsButton.checked;
+
+        global.window_group.visible = windowsVisible;
+        global.top_window_group.visible = windowsVisible;
+
+        this._trackedActors.forEach(this._updateActorVisibility.bind(this));
     });
 
     // Block original overlay key handler
