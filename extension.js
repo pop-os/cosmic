@@ -504,4 +504,6 @@ function disable() {
     }
 
     clock_alignment(CLOCK_CENTER);
+
+    show_overview_backgrounds();
 }
