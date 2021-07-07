@@ -286,7 +286,6 @@ function enable() {
     Main.panel.addToStatusArea("cosmic_applications", applications_button, 1, "left");
 
     // Hide search and modify background
-    Main.overview._overview._searchEntry.hide();
     // This signal cannot be connected until Main.overview is initialized
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         if (Main.overview._initCalled) {
@@ -294,11 +293,13 @@ function enable() {
                 Main.layoutManager._updateVisibility();
 
                 if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
-                    Main.overview._overview._searchEntry.hide();
+                    Main.overview._overview._searchEntry.opacity = 0;
+                    Main.overview._overview._searchEntry.reactive = false;
                     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
                     show_overview_backgrounds();
                 } else {
-                    Main.overview._overview._searchEntry.show();
+                    Main.overview._overview._searchEntry.opacity = 255;
+                    Main.overview._overview._searchEntry.reactive = true;
                     Main.overview._overview.add_style_class_name("cosmic-solid-bg");
                     hide_primary_overview_backgrounds();
                 }
