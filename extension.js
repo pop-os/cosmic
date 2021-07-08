@@ -39,6 +39,12 @@ const CLOCK_RIGHT = 2;
 
 let indicatorPad = null;
 function clock_alignment(alignment) {
+    // Clock Alignement breaks Date Menu, when other extensions like Dash2Panel are used
+    let dash2Panel = Main.extensionManager.lookup("dash-to-panel@jderose9.github.com");
+    if(dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED){
+        return;
+    }
+
     const dateMenu = Main.panel.statusArea['dateMenu'];
     const container = dateMenu.container;
     const parent = container.get_parent();
