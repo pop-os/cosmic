@@ -40,11 +40,12 @@ class CosmicTopBarButton extends PanelMenu.Button {
         ];
 
         // This signal cannot be connected until Main.overview is initialized
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        this._idleSource = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
             if (Main.overview._initCalled) {
                 Main.overview.viewSelector.connect('page-changed', () => {
                     this.update();
                 });
+                this._idleSource = null;
                 return GLib.SOURCE_REMOVE;
             } else {
                 return GLib.SOURCE_CONTINUE;
@@ -54,8 +55,9 @@ class CosmicTopBarButton extends PanelMenu.Button {
         this._xdndTimeOut = null;
 
         this.connect('destroy', () => {
-            for (const signal of signals) GLib.source_remove(signal);
+            for (const signal of signals) Main.overview.disconnect(signal);
 
+            if (this._idleSource !== null) GLib.source_remove(this._idleSource);
             if (this._xdndTimeOut !== null) GLib.source_remove(this._xdndTimeOut);
 
             Gio.Settings.unbind(this, "visible");
