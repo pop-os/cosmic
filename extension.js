@@ -20,7 +20,9 @@ let workspaces_button = null;
 let applications_button = null;
 let search_signal_page_changed = null;
 let signal_overlay_key = null;
+let signal_monitors_changed = null;
 let original_signal_overlay_key = null;
+let settings = null;
 
 let injections = [];
 
@@ -42,6 +44,10 @@ function clock_alignment(alignment) {
     // Clock Alignement breaks Date Menu, when other extensions like Dash2Panel are used
     let dash2Panel = Main.extensionManager.lookup("dash-to-panel@jderose9.github.com");
     if(dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED){
+        return;
+    }
+
+    if (Main.layoutManager.monitors.length == 0) {
         return;
     }
 
@@ -208,6 +214,10 @@ function hide_primary_overview_backgrounds() {
     });
 }
 
+function monitors_changed() {
+    clock_alignment(settings.get_enum("clock-alignment"));
+}
+
 function init(metadata) {}
 
 function enable() {
@@ -274,7 +284,7 @@ function enable() {
     });
     Main.panel.statusArea.appMenu.hide();
 
-    const settings = settings_new_schema(extension.metadata["settings-schema"]);
+    settings = settings_new_schema(extension.metadata["settings-schema"]);
 
     // Load overlay key action and keep it up to date with settings
     overlay_key_changed(settings);
@@ -423,7 +433,6 @@ function enable() {
         () => overview_toggle(OVERVIEW_APPLICATIONS)
     );
 
-    clock_alignment(settings.get_enum("clock-alignment"));
     settings.connect("changed::clock-alignment", () => {
         clock_alignment(settings.get_enum("clock-alignment"));
     });
@@ -433,9 +442,19 @@ function enable() {
     settings.connect("changed::workspace-picker-left", () => {
         workspace_picker_direction(Main.overview._overview._controls, settings.get_boolean("workspace-picker-left"));
     });
+
+    // Connect monitors-changed handler
+    signal_monitors_changed = Main.layoutManager.connect('monitors-changed', monitors_changed);
+    monitors_changed();
 }
 
 function disable() {
+    // Disconnect monitors-changed handler
+    if (signal_monitors_changed !== null) {
+        Main.layoutManager.disconnect(signal_monitors_changed);
+        signal_monitors_changed = null;
+    }
+
     // Restore applications shortcut
     const SHELL_KEYBINDINGS_SCHEMA = 'org.gnome.shell.keybindings';
     Main.wm.removeKeybinding('toggle-application-view');
