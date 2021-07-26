@@ -385,6 +385,24 @@ function enable() {
 
         let symbol = event.get_key_symbol();
 
+        if (!Main.overview.viewSelector._showAppsButton.checked) {
+            let workspaceManager = global.workspace_manager;
+            let activeWs = workspaceManager.get_active_workspace();
+            let ws;
+            switch (event.get_key_symbol()) {
+            case Clutter.KEY_Up:
+            case Clutter.KEY_k:
+                ws = activeWs.get_neighbor(Meta.MotionDirection.UP);
+                Main.wm.actionMoveWorkspace(ws);
+                return;
+            case Clutter.KEY_Down:
+            case Clutter.KEY_j:
+                ws = activeWs.get_neighbor(Meta.MotionDirection.DOWN);
+                Main.wm.actionMoveWorkspace(ws);
+                return;
+            }
+        }
+
         if (symbol === Clutter.KEY_Escape) {
             if (this._searchActive) this.reset();
             Main.overview.hide();
