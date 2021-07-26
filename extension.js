@@ -93,19 +93,13 @@ function clock_alignment(alignment) {
 
 function workspace_picker_direction(controls, left) {
     if (left) {
-        let first = controls._group.get_first_child();
-        if (first != controls._thumbnailsSlider) {
-            controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.LEFT;
-            controls._thumbnailsBox.add_style_class_name('workspace-thumbnails-left');
-            controls._group.set_child_below_sibling(controls._thumbnailsSlider, first)
-        }
+        controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.LEFT;
+        controls._thumbnailsBox.add_style_class_name('workspace-thumbnails-left');
+        controls._group.set_child_below_sibling(controls._thumbnailsSlider, controls.viewSelector);
     } else {
-        let last = controls._group.get_last_child();
-        if (last != controls._thumbnailsSlider) {
-            controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.RIGHT;
-            controls._thumbnailsBox.remove_style_class_name('workspace-thumbnails-left');
-            controls._group.set_child_above_sibling(controls._thumbnailsSlider, last);
-        }
+        controls._thumbnailsSlider.layout.slideDirection = OverviewControls.SlideDirection.RIGHT;
+        controls._thumbnailsBox.remove_style_class_name('workspace-thumbnails-left');
+        controls._group.set_child_above_sibling(controls._thumbnailsSlider, controls.viewSelector);
     }
 
     const handler_id = Main.overview.connect('showing', () => {
