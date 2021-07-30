@@ -44,10 +44,10 @@ function overview_visible(kind) {
 
 function overview_show(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
-        Main.overview.viewSelector._showAppsButton.checked = false;
+        Main.overview.dash.showAppsButton.checked = false;
         Main.overview.show();
     } else if (kind == OVERVIEW_APPLICATIONS) {
-        Main.overview.viewSelector._showAppsButton.checked = true;
+        Main.overview.dash.showAppsButton.checked = true;
         Main.overview.show();
     } else if (kind == OVERVIEW_LAUNCHER) {
         Main.overview.hide();

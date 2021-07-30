@@ -330,7 +330,7 @@ function enable() {
                             return;
 
                         let opacity;
-                        if (Main.overview.viewSelector._showAppsButton.checked) {
+                        if (Main.overview.dash.showAppsButton.checked) {
                             workspace.reactive = true;
                             workspace._cosmic_event_handler = workspace.connect('captured-event', (actor, event) => {
                                 if (event.type() == Clutter.EventType.BUTTON_PRESS)
@@ -359,7 +359,7 @@ function enable() {
                     // Handle `ExtraWorkspaceView` used with `workspaces-only-on-primary`
                     let workspaces = view._workspaces ?? [view._workspace];
                     workspaces.forEach(workspace => {
-                        if (Main.overview.viewSelector._showAppsButton.checked && workspace.monitorIndex != Main.layoutManager.primaryIndex) {
+                        if (Main.overview.dash.showAppsButton.checked && workspace.monitorIndex != Main.layoutManager.primaryIndex) {
                             workspace.opacity = 0;
                         }
                     });
@@ -444,7 +444,7 @@ function enable() {
     });
 
     inject(Main.layoutManager, "_updateVisibility", function () {
-        let windowsVisible = (Main.sessionMode.hasWindows && !this._inOverview) || Main.overview.viewSelector._showAppsButton.checked;
+        let windowsVisible = (Main.sessionMode.hasWindows && !this._inOverview) || Main.overview.dash.showAppsButton.checked;
 
         global.window_group.visible = windowsVisible;
         global.top_window_group.visible = windowsVisible;
