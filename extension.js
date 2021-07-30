@@ -8,7 +8,6 @@ const Overview = imports.ui.overview;
 const OverviewControls = imports.ui.overviewControls;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
-const ViewSelector = imports.ui.viewSelector;
 
 var { OVERVIEW_WORKSPACES, OVERVIEW_APPLICATIONS, OVERVIEW_LAUNCHER } = extension.imports.overview;
 var { overview_visible, overview_show, overview_hide, overview_toggle } = extension.imports.overview;
@@ -304,7 +303,7 @@ function enable() {
             search_signal_page_changed = Main.overview.viewSelector.connect('page-changed', () => {
                 Main.layoutManager._updateVisibility();
 
-                if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
+                if (!Main.overview.dash.showAppsButton.checked) {
                     Main.overview._overview._searchEntry.opacity = 0;
                     Main.overview._overview._searchEntry.reactive = false;
                     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
@@ -413,7 +412,7 @@ function enable() {
 
     inject(Main.overview, '_shadeBackgrounds', function () {
         // Give Applications a transparent background so it can fade in
-        if (Main.overview.viewSelector.getActivePage() == ViewSelector.ViewPage.APPS) {
+        if (Main.overview.dash.showAppsButton.checked) {
             hide_overview_backgrounds();
         } else {
             show_overview_backgrounds();

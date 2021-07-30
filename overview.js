@@ -1,5 +1,4 @@
 const Main = imports.ui.main;
-const ViewSelector = imports.ui.viewSelector;
 
 function with_pop_shell(callback) {
     let pop_shell = Main.extensionManager.lookup("pop-shell@system76.com");
@@ -18,13 +17,13 @@ var OVERVIEW_LAUNCHER = 2;
 function overview_visible(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
         if (Main.overview.visibleTarget) {
-            if (Main.overview.viewSelector.getActivePage() === ViewSelector.ViewPage.WINDOWS) {
+            if (!Main.overview.dash.showAppsButton.checked) {
                 return true;
             }
         }
     } else if (kind == OVERVIEW_APPLICATIONS) {
         if (Main.overview.visibleTarget) {
-            if (Main.overview.viewSelector.getActivePage() !== ViewSelector.ViewPage.WINDOWS) {
+            if (Main.overview.dash.showAppsButton.checked) {
                 return true;
             }
         }
