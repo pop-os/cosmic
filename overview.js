@@ -1,4 +1,7 @@
 const Main = imports.ui.main;
+const OverviewControls = imports.ui.overviewControls;
+
+const GNOME_VERSION = imports.misc.config.PACKAGE_VERSION;
 
 function with_pop_shell(callback) {
     let pop_shell = Main.extensionManager.lookup("pop-shell@system76.com");
@@ -43,11 +46,23 @@ function overview_visible(kind) {
 
 function overview_show(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
-        Main.overview.dash.showAppsButton.checked = false;
-        Main.overview.show();
+        if (GNOME_VERSION.startsWith("3.38")) {
+            Main.overview.dash.showAppsButton.checked = false;
+            Main.overview.show();
+        } else if (Main.overview.visible) {
+            Main.overview.dash.showAppsButton.checked = false;
+        } else {
+            Main.overview.show(OverviewControls.ControlsState.WINDOW_PICKER);
+        }
     } else if (kind == OVERVIEW_APPLICATIONS) {
-        Main.overview.dash.showAppsButton.checked = true;
-        Main.overview.show();
+        if (GNOME_VERSION.startsWith("3.38")) {
+            Main.overview.dash.showAppsButton.checked = true;
+            Main.overview.show();
+        } else if (Main.overview.visible) {
+            Main.overview.dash.showAppsButton.checked = true;
+        } else {
+            Main.overview.show(OverviewControls.ControlsState.APP_GRID);
+        }
     } else if (kind == OVERVIEW_LAUNCHER) {
         Main.overview.hide();
         with_pop_shell((ext) => {
