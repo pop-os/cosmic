@@ -124,14 +124,54 @@ function workspace_picker_direction(controls, left) {
 var overlay_key_action = OVERVIEW_LAUNCHER;
 
 function overlay_key() {
-    overview_toggle(overlay_key_action);
+    if (overlay_key_action !== null) {
+        overview_toggle(overlay_key_action);
+    }
 }
 
 function overlay_key_changed(settings) {
     if (overview_visible(overlay_key_action)) {
         overview_hide(overlay_key_action);
     }
-    overlay_key_action = settings.get_enum("overlay-key-action");
+    const overlay_key_is_disabled = settings.get_boolean("disable-overlay-key");
+    if (overlay_key_is_disabled) {
+        overlay_key_action = null;
+        disconnect_overlay_key_handler();
+    } else {
+        overlay_key_action = settings.get_enum("overlay-key-action");
+        connect_overlay_key_handler();
+    }
+}
+
+function connect_overlay_key_handler() {
+    // Block original overlay key handler
+    original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
+    if (original_signal_overlay_key !== null) {
+        global.display.block_signal_handler(original_signal_overlay_key);
+    }
+
+    // Connect modified overlay key handler
+    const A11Y_SCHEMA = 'org.gnome.desktop.a11y.keyboard';
+    const STICKY_KEYS_ENABLE = 'stickykeys-enable';
+    let _a11ySettings = new Gio.Settings({ schema_id: A11Y_SCHEMA });
+    signal_overlay_key = global.display.connect("overlay-key", () => {
+        if (!_a11ySettings.get_boolean(STICKY_KEYS_ENABLE))
+            overlay_key();
+    });
+}
+
+function disconnect_overlay_key_handler() {
+    // Disconnect modified overlay key handler
+    if (signal_overlay_key !== null) {
+        global.display.disconnect(signal_overlay_key);
+        signal_overlay_key = null;
+    }
+
+    // Unblock original overlay key handler
+    if (original_signal_overlay_key !== null) {
+        global.display.unblock_signal_handler(original_signal_overlay_key);
+        original_signal_overlay_key = null;
+    }
 }
 
 
@@ -369,6 +409,9 @@ function enable() {
     settings.connect("changed::overlay-key-action", () => {
         overlay_key_changed(settings);
     });
+    settings.connect("changed::disable-overlay-key", () => {
+        overlay_key_changed(settings);
+    });
 
     // Add workspaces button
     //TODO: this removes the curved selection corner, do we care?
@@ -497,21 +540,6 @@ function enable() {
         this._trackedActors.forEach(this._updateActorVisibility.bind(this));
     });
 
-    // Block original overlay key handler
-    original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
-    if (original_signal_overlay_key !== null) {
-        global.display.block_signal_handler(original_signal_overlay_key);
-    }
-
-    // Connect modified overlay key handler
-    const A11Y_SCHEMA = 'org.gnome.desktop.a11y.keyboard';
-    const STICKY_KEYS_ENABLE = 'stickykeys-enable';
-    let _a11ySettings = new Gio.Settings({ schema_id: A11Y_SCHEMA });
-    signal_overlay_key = global.display.connect("overlay-key", () => {
-        if (!_a11ySettings.get_boolean(STICKY_KEYS_ENABLE))
-            overlay_key();
-    });
-
     // Make applications shortcut hide/show overview
     const SHELL_KEYBINDINGS_SCHEMA = 'org.gnome.shell.keybindings';
     Main.wm.removeKeybinding('toggle-application-view');
@@ -561,17 +589,7 @@ function disable() {
         obj._toggleAppsPage.bind(obj)
     );
 
-    // Disconnect modified overlay key handler
-    if (signal_overlay_key !== null) {
-        global.display.disconnect(signal_overlay_key);
-        signal_overlay_key = null;
-    }
-
-    // Unblock original overlay key handler
-    if (original_signal_overlay_key !== null) {
-        global.display.unblock_signal_handler(original_signal_overlay_key);
-        original_signal_overlay_key = null;
-    }
+    disconnect_overlay_key_handler();
 
     // Show search
     if (search_signal_page_changed !== null) {
