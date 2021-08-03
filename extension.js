@@ -45,7 +45,7 @@ let indicatorPad = null;
 function clock_alignment(alignment) {
     // Clock Alignement breaks Date Menu, when other extensions like Dash2Panel are used
     let dash2Panel = Main.extensionManager.lookup("dash-to-panel@jderose9.github.com");
-    if(dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED){
+    if (dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED) {
         return;
     }
 
@@ -57,7 +57,7 @@ function clock_alignment(alignment) {
     const container = dateMenu.container;
     const parent = container.get_parent();
     if (parent != null) {
-        parent.remove_child (container);
+        parent.remove_child(container);
     }
 
     const banner_width = Main.panel.statusArea.dateMenu._messageList.width;
@@ -254,7 +254,7 @@ function monitors_changed() {
     clock_alignment(settings.get_enum("clock-alignment"));
 }
 
-function init(metadata) {}
+function init(metadata) { }
 
 function enable() {
     // Raise first window on alt-tab
@@ -309,13 +309,13 @@ function enable() {
     });
 
     // Hide activities button
-    activities_signal_show = Main.panel.statusArea.activities.connect("show", function() {
+    activities_signal_show = Main.panel.statusArea.activities.connect("show", function () {
         Main.panel.statusArea.activities.hide();
     });
     Main.panel.statusArea.activities.hide();
 
     // Hide app menu
-    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function() {
+    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function () {
         Main.panel.statusArea.appMenu.hide();
     });
     Main.panel.statusArea.appMenu.hide();
@@ -389,9 +389,9 @@ function enable() {
                         const animate = workspace.metaWorkspace === null || workspace.metaWorkspace.active;
 
                         workspace.ease({
-                           opacity: opacity,
-                           duration: animate ? Overview.ANIMATION_TIME : 0,
-                           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+                            opacity: opacity,
+                            duration: animate ? Overview.ANIMATION_TIME : 0,
+                            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                         });
                     });
                 });
@@ -438,7 +438,7 @@ function enable() {
             }
         }
         return Clutter.EVENT_PROPAGATE;
-      });
+    });
 
     inject(Main.overview.viewSelector, 'animateFromOverview', function () {
         this._workspacesPage.opacity = 255;
@@ -466,10 +466,10 @@ function enable() {
         this._backgroundGroup.get_children().forEach((background) => {
             background.brightness = 1.0;
             background.opacity = 255;
-            
+
             // VERY IMPORTANT: This somehow removes the initial workspaces
             // darkening. Not sure how, but it does.
-            if(background.content == undefined) {
+            if (background.content == undefined) {
                 // Shell version 3.36
                 background.vignette = false;
                 background.brightness = 1.0;
@@ -585,9 +585,9 @@ function disable() {
 
     // Remove injections
     let i;
-    for(i in injections) {
-       let injection = injections[i];
-       injection["object"][injection["parameter"]] = injection["value"];
+    for (i in injections) {
+        let injection = injections[i];
+        injection["object"][injection["parameter"]] = injection["value"];
     }
 
     clock_alignment(CLOCK_CENTER);
