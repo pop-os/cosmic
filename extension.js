@@ -117,16 +117,23 @@ function overlay_key() {
 }
 
 function overlay_key_changed(settings) {
-    if (overview_visible(overlay_key_action)) {
+    const overlay_key_is_disabled = settings.get_boolean("disable-overlay-key");
+    const overlay_key_was_disabled = (overlay_key_action === null);
+
+    if (overview_visible(overlay_key_action) && !overlay_key_was_disabled) {
         overview_hide(overlay_key_action);
     }
-    const overlay_key_is_disabled = settings.get_boolean("disable-overlay-key");
+
     if (overlay_key_is_disabled) {
         overlay_key_action = null;
-        disconnect_overlay_key_handler();
+        if (!overlay_key_was_disabled) {
+            disconnect_overlay_key_handler();
+        }
     } else {
         overlay_key_action = settings.get_enum("overlay-key-action");
-        connect_overlay_key_handler();
+        if (overlay_key_was_disabled) {
+            connect_overlay_key_handler();
+        }
     }
 }
 
