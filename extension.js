@@ -121,7 +121,7 @@ function workspace_picker_direction(controls, left) {
     });
 }
 
-var overlay_key_action = OVERVIEW_LAUNCHER;
+var overlay_key_action = null;
 
 function overlay_key() {
     if (overlay_key_action !== null) {
