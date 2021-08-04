@@ -55,7 +55,7 @@ function buildNichePrefsWidget() {
         valign: Gtk.Align.CENTER,
     });
     box.add(new Gtk.Label({
-        label: "<b>Niche Settings</b>",
+        label: "<b>Advanced Settings</b>",
         justify: Gtk.Justification.CENTER,
         use_markup: true,
     }));
@@ -67,7 +67,7 @@ function buildNichePrefsWidget() {
         valign: Gtk.Align.CENTER,
     });
     superKeyBox.add(new Gtk.Label({
-        label: "Disable super key action (reverts to gnome default)",
+        label: "Disable Super key action (reverts to GNOME default)",
     }));
     const superKeySwitch = new Gtk.Switch({
         active: settings.get_boolean("disable-overlay-key"),
