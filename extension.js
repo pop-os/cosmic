@@ -304,13 +304,13 @@ function enable() {
                 Main.layoutManager._updateVisibility();
 
                 if (!Main.overview.dash.showAppsButton.checked) {
-                    Main.overview._overview._searchEntry.opacity = 0;
-                    Main.overview._overview._searchEntry.reactive = false;
+                    Main.overview.searchEntry.opacity = 0;
+                    Main.overview.searchEntry.reactive = false;
                     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
                     show_overview_backgrounds();
                 } else {
-                    Main.overview._overview._searchEntry.opacity = 255;
-                    Main.overview._overview._searchEntry.reactive = true;
+                    Main.overview.searchEntry.opacity = 255;
+                    Main.overview.searchEntry.reactive = true;
                     Main.overview._overview.add_style_class_name("cosmic-solid-bg");
                     hide_overview_backgrounds();
                 }
@@ -533,7 +533,7 @@ function disable() {
         Main.overview.viewSelector.disconnect(search_signal_page_empty);
         search_signal_page_empty = null;
     }
-    Main.overview._overview._searchEntry.show();
+    Main.overview.searchEntry.show();
 
     // Reset background changes
     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
