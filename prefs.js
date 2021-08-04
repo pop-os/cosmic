@@ -2,6 +2,13 @@ const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
 
+const ExtensionUtils = imports.misc.extensionUtils;
+const extension = ExtensionUtils.getCurrentExtension();
+
+var { settings_new_schema } = extension.imports.settings;
+
+let settings = null;
+
 function open_panel() {
     const appinfo = Gio.DesktopAppInfo.new("gnome-background-panel.desktop");
     const launch_ctx = Gdk.Display.get_default().get_app_launch_context();
@@ -9,6 +16,7 @@ function open_panel() {
 }
 
 function init() {
+    settings = settings_new_schema(extension.metadata["settings-schema"]);
 }
 
 function buildPrefsWidget() {
@@ -31,7 +39,44 @@ function buildPrefsWidget() {
     });
     box.add(label);
     box.add(button);
+    box.add(new Gtk.Separator({}));
+    box.add(buildNichePrefsWidget());
+
     box.show_all();
+
+    return box;
+}
+
+function buildNichePrefsWidget() {
+    const box = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
+        spacing: 9,
+        halign: Gtk.Align.FILL,
+        valign: Gtk.Align.CENTER,
+    });
+    box.add(new Gtk.Label({
+        label: "<b>Niche Settings</b>",
+        justify: Gtk.Justification.CENTER,
+        use_markup: true,
+    }));
+
+    const superKeyBox = new Gtk.Box({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        spacing: 9,
+        halign: Gtk.Align.FILL,
+        valign: Gtk.Align.CENTER,
+    });
+    superKeyBox.add(new Gtk.Label({
+        label: "Disable super key action (reverts to gnome default)",
+    }));
+    const superKeySwitch = new Gtk.Switch({
+        active: settings.get_boolean("disable-overlay-key"),
+    });
+    superKeySwitch.connect("notify::active", (widget) => {
+        settings.set_boolean("disable-overlay-key", widget.active);
+    });
+    superKeyBox.add(superKeySwitch);
+    box.add(superKeyBox);
 
     return box;
 }
