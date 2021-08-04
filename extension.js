@@ -209,6 +209,71 @@ function hide_overview_backgrounds() {
     });
 }
 
+function page_changed() {
+    Main.layoutManager._updateVisibility();
+
+    if (!Main.overview.dash.showAppsButton.checked) {
+        Main.overview.searchEntry.opacity = 0;
+        Main.overview.searchEntry.reactive = false;
+        Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
+        show_overview_backgrounds();
+    } else {
+        Main.overview.searchEntry.opacity = 255;
+        Main.overview.searchEntry.reactive = true;
+        Main.overview._overview.add_style_class_name("cosmic-solid-bg");
+        hide_overview_backgrounds();
+    }
+
+    Main.overview.viewSelector._workspacesDisplay._workspacesViews.forEach(view => {
+        // Handle `ExtraWorkspaceView` used with `workspaces-only-on-primary`
+        let workspaces = view._workspaces ?? [view._workspace];
+        workspaces.forEach(workspace => {
+            // remove signal handler
+            if (workspace._cosmic_event_handler) {
+                workspace.disconnect(workspace._cosmic_event_handler);
+                delete workspace._cosmic_event_handler;
+            }
+
+            if (workspace.monitorIndex == Main.layoutManager.primaryIndex)
+                return;
+
+            let opacity;
+            if (Main.overview.dash.showAppsButton.checked) {
+                workspace.reactive = true;
+                workspace._cosmic_event_handler = workspace.connect('captured-event', (actor, event) => {
+                    if (event.type() == Clutter.EventType.BUTTON_PRESS)
+                        Main.overview.hide();
+                    // Blocks event handlers for child widgets
+                    return Clutter.EVENT_STOP;
+                });
+                opacity = 0;
+            } else {
+                opacity = 255;
+            }
+
+            const animate = workspace.metaWorkspace === null || workspace.metaWorkspace.active;
+
+            workspace.ease({
+               opacity: opacity,
+               duration: animate ? Overview.ANIMATION_TIME : 0,
+               mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            });
+        });
+    });
+}
+
+function page_empty() {
+    Main.overview.viewSelector._workspacesDisplay._workspacesViews.forEach(view => {
+        // Handle `ExtraWorkspaceView` used with `workspaces-only-on-primary`
+        let workspaces = view._workspaces ?? [view._workspace];
+        workspaces.forEach(workspace => {
+            if (Main.overview.dash.showAppsButton.checked && workspace.monitorIndex != Main.layoutManager.primaryIndex) {
+                workspace.opacity = 0;
+            }
+        });
+    });
+}
+
 function monitors_changed() {
     clock_alignment(settings.get_enum("clock-alignment"));
 }
@@ -300,71 +365,8 @@ function enable() {
     // This signal cannot be connected until Main.overview is initialized
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         if (Main.overview._initCalled) {
-            search_signal_page_changed = Main.overview.viewSelector.connect('page-changed', () => {
-                Main.layoutManager._updateVisibility();
-
-                if (!Main.overview.dash.showAppsButton.checked) {
-                    Main.overview.searchEntry.opacity = 0;
-                    Main.overview.searchEntry.reactive = false;
-                    Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
-                    show_overview_backgrounds();
-                } else {
-                    Main.overview.searchEntry.opacity = 255;
-                    Main.overview.searchEntry.reactive = true;
-                    Main.overview._overview.add_style_class_name("cosmic-solid-bg");
-                    hide_overview_backgrounds();
-                }
-
-                Main.overview.viewSelector._workspacesDisplay._workspacesViews.forEach(view => {
-                    // Handle `ExtraWorkspaceView` used with `workspaces-only-on-primary`
-                    let workspaces = view._workspaces ?? [view._workspace];
-                    workspaces.forEach(workspace => {
-                        // remove signal handler
-                        if (workspace._cosmic_event_handler) {
-                            workspace.disconnect(workspace._cosmic_event_handler);
-                            delete workspace._cosmic_event_handler;
-                        }
-
-                        if (workspace.monitorIndex == Main.layoutManager.primaryIndex)
-                            return;
-
-                        let opacity;
-                        if (Main.overview.dash.showAppsButton.checked) {
-                            workspace.reactive = true;
-                            workspace._cosmic_event_handler = workspace.connect('captured-event', (actor, event) => {
-                                if (event.type() == Clutter.EventType.BUTTON_PRESS)
-                                    Main.overview.hide();
-                                // Blocks event handlers for child widgets
-                                return Clutter.EVENT_STOP;
-                            });
-                            opacity = 0;
-                        } else {
-                            opacity = 255;
-                        }
-
-                        const animate = workspace.metaWorkspace === null || workspace.metaWorkspace.active;
-
-                        workspace.ease({
-                           opacity: opacity,
-                           duration: animate ? Overview.ANIMATION_TIME : 0,
-                           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                        });
-                    });
-                });
-            });
-
-            search_signal_page_empty = Main.overview.viewSelector.connect('page-empty', () => {
-                Main.overview.viewSelector._workspacesDisplay._workspacesViews.forEach(view => {
-                    // Handle `ExtraWorkspaceView` used with `workspaces-only-on-primary`
-                    let workspaces = view._workspaces ?? [view._workspace];
-                    workspaces.forEach(workspace => {
-                        if (Main.overview.dash.showAppsButton.checked && workspace.monitorIndex != Main.layoutManager.primaryIndex) {
-                            workspace.opacity = 0;
-                        }
-                    });
-                });
-            });
-
+            search_signal_page_changed = Main.overview.viewSelector.connect('page-changed', page_changed);
+            search_signal_page_empty = Main.overview.viewSelector.connect('page-empty', page_empty);
             return GLib.SOURCE_REMOVE;
         } else {
             return GLib.SOURCE_CONTINUE;
