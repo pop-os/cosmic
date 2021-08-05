@@ -225,52 +225,42 @@ function page_changed() {
     }
 
     Main.overview.viewSelector._workspacesDisplay._workspacesViews.forEach(view => {
-        // Handle `ExtraWorkspaceView` used with `workspaces-only-on-primary`
-        let workspaces = view._workspaces ?? [view._workspace];
-        workspaces.forEach(workspace => {
-            // remove signal handler
-            if (workspace._cosmic_event_handler) {
-                workspace.disconnect(workspace._cosmic_event_handler);
-                delete workspace._cosmic_event_handler;
-            }
+        // remove signal handler
+        if (view._cosmic_event_handler) {
+            view.disconnect(view._cosmic_event_handler);
+            delete view._cosmic_event_handler;
+        }
 
-            if (workspace.monitorIndex == Main.layoutManager.primaryIndex)
-                return;
+        if (view._monitorIndex == Main.layoutManager.primaryIndex)
+            return;
 
-            let opacity;
-            if (Main.overview.dash.showAppsButton.checked) {
-                workspace.reactive = true;
-                workspace._cosmic_event_handler = workspace.connect('captured-event', (actor, event) => {
-                    if (event.type() == Clutter.EventType.BUTTON_PRESS)
-                        Main.overview.hide();
-                    // Blocks event handlers for child widgets
-                    return Clutter.EVENT_STOP;
-                });
-                opacity = 0;
-            } else {
-                opacity = 255;
-            }
-
-            const animate = workspace.metaWorkspace === null || workspace.metaWorkspace.active;
-
-            workspace.ease({
-               opacity: opacity,
-               duration: animate ? Overview.ANIMATION_TIME : 0,
-               mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        let opacity;
+        if (Main.overview.dash.showAppsButton.checked) {
+            view.reactive = true;
+            view._cosmic_event_handler = view.connect('captured-event', (actor, event) => {
+                if (event.type() == Clutter.EventType.BUTTON_PRESS)
+                    Main.overview.hide();
+                // Blocks event handlers for child widgets
+                return Clutter.EVENT_STOP;
             });
+            opacity = 0;
+        } else {
+            opacity = 255;
+        }
+
+        view.ease({
+           opacity: opacity,
+           duration: Overview.ANIMATION_TIME,
+           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         });
     });
 }
 
 function page_empty() {
     Main.overview.viewSelector._workspacesDisplay._workspacesViews.forEach(view => {
-        // Handle `ExtraWorkspaceView` used with `workspaces-only-on-primary`
-        let workspaces = view._workspaces ?? [view._workspace];
-        workspaces.forEach(workspace => {
-            if (Main.overview.dash.showAppsButton.checked && workspace.monitorIndex != Main.layoutManager.primaryIndex) {
-                workspace.opacity = 0;
-            }
-        });
+        if (Main.overview.dash.showAppsButton.checked && view._monitorIndex != Main.layoutManager.primaryIndex) {
+            view.opacity = 0;
+        }
     });
 }
 
