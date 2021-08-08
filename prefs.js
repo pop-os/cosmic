@@ -20,63 +20,17 @@ function init() {
 }
 
 function buildPrefsWidget() {
-    const label = new Gtk.Label({
-        label: "Configuration for the dock, the top bar, the workspaces overview, and\nother COSMIC components is available in the Settings application.",
-        justify: Gtk.Justification.CENTER,
-    });
+    const ui_file = extension.dir.get_path() + "/prefs.ui";
+    const ui = Gtk.Builder.new_from_file(ui_file);
 
-    const button = new Gtk.Button({
-        label: "Configure in Settings",
-        halign: Gtk.Align.CENTER,
-    });
-    button.connect("clicked", open_panel);
+    const settings_button = ui.get_object("button-settings");
+    settings_button.connect("clicked", open_panel);
 
-    const box = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        spacing: 18,
-        halign: Gtk.Align.CENTER,
-        valign: Gtk.Align.CENTER,
-    });
-    box.add(label);
-    box.add(button);
-    box.add(new Gtk.Separator({}));
-    box.add(buildNichePrefsWidget());
-
-    box.show_all();
-
-    return box;
-}
-
-function buildNichePrefsWidget() {
-    const box = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        spacing: 9,
-        halign: Gtk.Align.FILL,
-        valign: Gtk.Align.CENTER,
-    });
-    box.add(new Gtk.Label({
-        label: "<b>Advanced Settings</b>",
-        justify: Gtk.Justification.CENTER,
-        use_markup: true,
-    }));
-
-    const superKeyBox = new Gtk.Box({
-        orientation: Gtk.Orientation.HORIZONTAL,
-        spacing: 9,
-        halign: Gtk.Align.FILL,
-        valign: Gtk.Align.CENTER,
-    });
-    superKeyBox.add(new Gtk.Label({
-        label: "Disable Super key action (reverts to GNOME default)",
-    }));
-    const superKeySwitch = new Gtk.Switch({
-        active: settings.get_boolean("disable-overlay-key"),
-    });
-    superKeySwitch.connect("notify::active", (widget) => {
+    const disable_super_switch = ui.get_object("switch-disable-super");
+    disable_super_switch.set_state(settings.get_boolean("disable-overlay-key"));
+    disable_super_switch.connect("notify::active", (widget) => {
         settings.set_boolean("disable-overlay-key", widget.active);
     });
-    superKeyBox.add(superKeySwitch);
-    box.add(superKeyBox);
 
-    return box;
+    return ui.get_object("main-widget");
 }
