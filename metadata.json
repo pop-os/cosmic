@@ -3,7 +3,8 @@
   "name": "Pop COSMIC",
   "original-authors": "System76",
   "shell-version": [
-    "3.38"
+    "3.38",
+    "40.0"
   ],
   "url": "https://github.com/pop-os/cosmic",
   "uuid": "pop-cosmic@system76.com",
