@@ -296,6 +296,16 @@ function monitors_changed() {
 function init(metadata) {}
 
 function enable() {
+    // No overview at start-up
+    if (!GNOME_VERSION.startsWith("3.38")) {
+        if (Main.layoutManager._startingUp && Main.sessionMode.hasOverview) {
+            inject(Main.sessionMode, "hasOverview", false);
+            Main.layoutManager.connect('startup-complete', () => {
+                Main.sessionMode.hasOverview = true;
+            });
+        }
+    }
+
     // Raise first window on alt-tab
     inject(AltTab.AppSwitcherPopup.prototype, "_finish", function (timestamp) {
         let appIcon = this._items[this._selectedIndex];
