@@ -405,6 +405,9 @@ function gnome_3_38_disable() {
 }
 
 function gnome_40_enable() {
+    // Vertical workspaces
+    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, true, -1, 1);
+
     // No overview at start-up
     if (Main.layoutManager._startingUp && Main.sessionMode.hasOverview) {
         inject(Main.sessionMode, "hasOverview", false);
@@ -456,6 +459,8 @@ function gnome_40_enable() {
 }
 
 function gnome_40_disable() {
+    // Horizontal workspaces
+    global.workspaceManager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
 }
 
 function init(metadata) {}
