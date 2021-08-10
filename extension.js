@@ -27,6 +27,7 @@ let search_signal_page_empty = null;
 let signal_overlay_key = null;
 let signal_monitors_changed = null;
 let signal_notify_checked = null;
+let search_signal_showing = null;
 let original_signal_overlay_key = null;
 let settings = null;
 
@@ -537,6 +538,7 @@ function enable() {
             search_signal_page_empty = Main.overview.viewSelector.connect('page-empty', page_empty);
         } else {
             signal_notify_checked = Main.overview.dash.showAppsButton.connect('notify::checked', page_changed);
+            search_signal_showing = Main.overview.connect('showing', page_empty);
         }
 
         return GLib.SOURCE_REMOVE;
@@ -645,6 +647,10 @@ function disable() {
     if (signal_notify_checked !== null) {
         Main.overview.dash.showAppsButton.disconnect(signal_notify_checked);
         signal_notify_checked = null;
+    }
+    if (search_signal_showing !== null) {
+        Main.overview.disconnect(search_signal_showing);
+        search_signal_showing = null;
     }
     Main.overview.searchEntry.show();
 
