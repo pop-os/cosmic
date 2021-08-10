@@ -8,7 +8,8 @@ const Overview = imports.ui.overview;
 const OverviewControls = imports.ui.overviewControls;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
-const {ThumbnailsBox} = imports.ui.workspaceThumbnail;
+const WorkspacesView = imports.ui.workspacesView;
+const WorkspaceThumbnail = imports.ui.workspaceThumbnail;
 
 const GNOME_VERSION = imports.misc.config.PACKAGE_VERSION;
 
@@ -240,13 +241,21 @@ function page_changed() {
     Main.layoutManager._updateVisibility();
 
     if (!Main.overview.dash.showAppsButton.checked) {
-        Main.overview.searchEntry.opacity = 0;
-        Main.overview.searchEntry.reactive = false;
+        if (GNOME_VERSION.startsWith("3.38")) {
+            Main.overview.searchEntry.opacity = 0;
+            Main.overview.searchEntry.reactive = false;
+        } else {
+            Main.overview.searchEntry.hide();
+        }
         Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
         show_overview_backgrounds();
     } else {
-        Main.overview.searchEntry.opacity = 255;
-        Main.overview.searchEntry.reactive = true;
+        if (GNOME_VERSION.startsWith("3.38")) {
+            Main.overview.searchEntry.opacity = 255;
+            Main.overview.searchEntry.reactive = true;
+        } else {
+            Main.overview.searchEntry.show();
+        }
         Main.overview._overview.add_style_class_name("cosmic-solid-bg");
         hide_overview_backgrounds();
     }
@@ -324,11 +333,27 @@ function enable() {
             return true;
         });
     } else {
-        inject(ThumbnailsBox.prototype, "_updateShouldShow", function () {
+        inject(WorkspaceThumbnail.ThumbnailsBox.prototype, "_updateShouldShow", function () {
             if (!this._shouldShow) {
                 this._shouldShow = true;
                 this.notify('should-show');
             }
+        });
+
+        // Increase thumbnail size on primary monitor
+        inject(WorkspaceThumbnail, "MAX_THUMBNAIL_SCALE", 0.1);
+
+        // Increase thumbnail size on secondary monitors
+        inject(WorkspacesView.SecondaryMonitorDisplay.prototype, "_getThumbnailsHeight", function(box) {
+            if (!this._thumbnails.visible)
+                return 0;
+
+            const [width, height] = box.get_size();
+            const { expandFraction } = this._thumbnails;
+            const [thumbnailsHeight] = this._thumbnails.get_preferred_height(width);
+            return Math.min(
+                thumbnailsHeight * expandFraction,
+                height * WorkspaceThumbnail.MAX_THUMBNAIL_SCALE);
         });
     }
 
