@@ -303,17 +303,167 @@ function monitors_changed() {
     clock_alignment(settings.get_enum("clock-alignment"));
 }
 
+function gnome_3_38_enable() {
+    // Always show workspaces picker
+    inject(Main.overview._overview._controls._thumbnailsSlider, "_getAlwaysZoomOut", function () {
+        return true;
+    });
+
+    // Remove app "spring"
+    inject(Main.overview.viewSelector, '_animateIn', function (oldPage) {
+        if (oldPage)
+            oldPage.hide();
+
+        this.emit('page-empty');
+
+        this._activePage.show();
+
+        this._fadePageIn();
+    });
+    inject(Main.overview.viewSelector, '_animateOut', function (page) {
+        this._fadePageOut(page);
+    });
+
+    // Exit from overview on Esc of applications view
+    inject(Main.overview.viewSelector, '_onStageKeyPress', function (actor, event) {
+        if (Main.modalCount > 1)
+            return Clutter.EVENT_PROPAGATE;
+
+        let symbol = event.get_key_symbol();
+
+        if (symbol === Clutter.KEY_Escape) {
+            if (this._searchActive) this.reset();
+            Main.overview.hide();
+            return Clutter.EVENT_STOP;
+        } else if (this._shouldTriggerSearch(symbol)) {
+            if (this._activePage === this._appsPage) this.startSearch(event);
+        } else if (!this._searchActive && !global.stage.key_focus) {
+            if (symbol === Clutter.KEY_Tab || symbol === Clutter.KEY_Down) {
+                this._activePage.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
+                return Clutter.EVENT_STOP;
+            } else if (symbol === Clutter.KEY_ISO_Left_Tab) {
+                this._activePage.navigate_focus(null, St.DirectionType.TAB_BACKWARD, false);
+                return Clutter.EVENT_STOP;
+            }
+        }
+        return Clutter.EVENT_PROPAGATE;
+    });
+
+    inject(Main.overview.viewSelector, 'animateFromOverview', function () {
+        this._workspacesPage.opacity = 255;
+
+        this._workspacesDisplay.animateFromOverview(this._activePage != this._workspacesPage);
+
+        // Don't show background while animating out of applications
+        this.block_signal_handler(search_signal_page_changed);
+        this._showAppsButton.checked = false;
+        this.unblock_signal_handler(search_signal_page_changed);
+
+        if (!this._workspacesDisplay.activeWorkspaceHasMaximizedWindows())
+            Main.overview.fadeInDesktop();
+    });
+
+    inject(Main.overview, '_shadeBackgrounds', function () {
+        // Give Applications a transparent background so it can fade in
+        if (Main.overview.dash.showAppsButton.checked) {
+            hide_overview_backgrounds();
+        } else {
+            show_overview_backgrounds();
+        }
+
+        // Remove the code responsible for the vignette effect
+        this._backgroundGroup.get_children().forEach((background) => {
+            background.brightness = 1.0;
+            background.opacity = 255;
+
+            // VERY IMPORTANT: This somehow removes the initial workspaces
+            // darkening. Not sure how, but it does.
+            if(background.content == undefined) {
+                // Shell version 3.36
+                background.vignette = false;
+                background.brightness = 1.0;
+            } else {
+                // Shell version >= 3.38
+                background.content.vignette = false;
+                background.content.brightness = 1.0;
+            }
+        })
+    });
+
+    // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
+    inject(Main.overview, '_unshadeBackgrounds', function () {
+        return true;
+    });
+}
+
+function gnome_3_38_disable() {
+    // Enable the vignette effect for each actor
+    Main.overview._backgroundGroup.get_children().forEach((actor) => {
+        actor.vignette = true;
+    }, null);
+}
+
+function gnome_40_enable() {
+    // No overview at start-up
+    if (Main.layoutManager._startingUp && Main.sessionMode.hasOverview) {
+        inject(Main.sessionMode, "hasOverview", false);
+        Main.layoutManager.connect('startup-complete', () => {
+            Main.sessionMode.hasOverview = true;
+        });
+    }
+
+    // Increase thumbnail size on primary monitor
+    inject(WorkspaceThumbnail, "MAX_THUMBNAIL_SCALE", 0.1);
+
+    // Increase thumbnail size on secondary monitors
+    inject(WorkspacesView.SecondaryMonitorDisplay.prototype, "_getThumbnailsHeight", function(box) {
+        if (!this._thumbnails.visible)
+            return 0;
+
+        const [width, height] = box.get_size();
+        const { expandFraction } = this._thumbnails;
+        const [thumbnailsHeight] = this._thumbnails.get_preferred_height(width);
+        return Math.min(
+            thumbnailsHeight * expandFraction,
+            height * WorkspaceThumbnail.MAX_THUMBNAIL_SCALE);
+    });
+
+    // Always show workspaces picker
+    inject(WorkspaceThumbnail.ThumbnailsBox.prototype, "_updateShouldShow", function () {
+        if (!this._shouldShow) {
+            this._shouldShow = true;
+            this.notify('should-show');
+        }
+    });
+
+    // Exit from overview on Esc of applications view
+    inject(Main.overview._overview._controls._searchController, '_onStageKeyPress', function (actor, event) {
+        if (Main.modalCount > 1)
+            return Clutter.EVENT_PROPAGATE;
+
+        let symbol = event.get_key_symbol();
+
+        if (symbol === Clutter.KEY_Escape) {
+            if (this._searchActive) this.reset();
+            Main.overview.hide();
+            return Clutter.EVENT_STOP;
+        } else if (this._shouldTriggerSearch(symbol)) {
+            this.startSearch(event);
+        }
+        return Clutter.EVENT_PROPAGATE;
+    });
+}
+
+function gnome_40_disable() {
+}
+
 function init(metadata) {}
 
 function enable() {
-    // No overview at start-up
-    if (!GNOME_VERSION.startsWith("3.38")) {
-        if (Main.layoutManager._startingUp && Main.sessionMode.hasOverview) {
-            inject(Main.sessionMode, "hasOverview", false);
-            Main.layoutManager.connect('startup-complete', () => {
-                Main.sessionMode.hasOverview = true;
-            });
-        }
+    if (GNOME_VERSION.startsWith("3.38")) {
+        gnome_3_38_enable();
+    } else {
+        gnome_40_enable();
     }
 
     // Raise first window on alt-tab
@@ -326,36 +476,6 @@ function enable() {
 
         SwitcherPopup.SwitcherPopup.prototype._finish.apply(this, [timestamp]);
     });
-
-    // Always show workspaces picker
-    if (GNOME_VERSION.startsWith("3.38")) {
-        inject(Main.overview._overview._controls._thumbnailsSlider, "_getAlwaysZoomOut", function () {
-            return true;
-        });
-    } else {
-        inject(WorkspaceThumbnail.ThumbnailsBox.prototype, "_updateShouldShow", function () {
-            if (!this._shouldShow) {
-                this._shouldShow = true;
-                this.notify('should-show');
-            }
-        });
-
-        // Increase thumbnail size on primary monitor
-        inject(WorkspaceThumbnail, "MAX_THUMBNAIL_SCALE", 0.1);
-
-        // Increase thumbnail size on secondary monitors
-        inject(WorkspacesView.SecondaryMonitorDisplay.prototype, "_getThumbnailsHeight", function(box) {
-            if (!this._thumbnails.visible)
-                return 0;
-
-            const [width, height] = box.get_size();
-            const { expandFraction } = this._thumbnails;
-            const [thumbnailsHeight] = this._thumbnails.get_preferred_height(width);
-            return Math.min(
-                thumbnailsHeight * expandFraction,
-                height * WorkspaceThumbnail.MAX_THUMBNAIL_SCALE);
-        });
-    }
 
     // Pop Shop details
     let original_rebuildMenu = AppDisplay.AppIconMenu.prototype._rebuildMenu;
@@ -376,23 +496,6 @@ function enable() {
 
         return ret;
     });
-
-    // Remove app "spring"
-    if (GNOME_VERSION.startsWith("3.38")) {
-        inject(Main.overview.viewSelector, '_animateIn', function (oldPage) {
-            if (oldPage)
-                oldPage.hide();
-
-            this.emit('page-empty');
-
-            this._activePage.show();
-
-            this._fadePageIn();
-        });
-        inject(Main.overview.viewSelector, '_animateOut', function (page) {
-            this._fadePageOut(page);
-        });
-    }
 
     // Hide activities button
     activities_signal_show = Main.panel.statusArea.activities.connect("show", function() {
@@ -438,99 +541,6 @@ function enable() {
 
         return GLib.SOURCE_REMOVE;
     });
-
-    // Exit from overview on Esc of applications view
-    if (GNOME_VERSION.startsWith("3.38")) {
-        inject(Main.overview.viewSelector, '_onStageKeyPress', function (actor, event) {
-            if (Main.modalCount > 1)
-                return Clutter.EVENT_PROPAGATE;
-
-            let symbol = event.get_key_symbol();
-
-            if (symbol === Clutter.KEY_Escape) {
-                if (this._searchActive) this.reset();
-                Main.overview.hide();
-                return Clutter.EVENT_STOP;
-            } else if (this._shouldTriggerSearch(symbol)) {
-                if (this._activePage === this._appsPage) this.startSearch(event);
-            } else if (!this._searchActive && !global.stage.key_focus) {
-                if (symbol === Clutter.KEY_Tab || symbol === Clutter.KEY_Down) {
-                    this._activePage.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
-                    return Clutter.EVENT_STOP;
-                } else if (symbol === Clutter.KEY_ISO_Left_Tab) {
-                    this._activePage.navigate_focus(null, St.DirectionType.TAB_BACKWARD, false);
-                    return Clutter.EVENT_STOP;
-                }
-            }
-            return Clutter.EVENT_PROPAGATE;
-        });
-    } else {
-        inject(Main.overview._overview._controls._searchController, '_onStageKeyPress', function (actor, event) {
-            if (Main.modalCount > 1)
-                return Clutter.EVENT_PROPAGATE;
-
-            let symbol = event.get_key_symbol();
-
-            if (symbol === Clutter.KEY_Escape) {
-                if (this._searchActive) this.reset();
-                Main.overview.hide();
-                return Clutter.EVENT_STOP;
-            } else if (this._shouldTriggerSearch(symbol)) {
-                this.startSearch(event);
-            }
-            return Clutter.EVENT_PROPAGATE;
-        });
-    }
-
-    if (GNOME_VERSION.startsWith("3.38")) {
-        inject(Main.overview.viewSelector, 'animateFromOverview', function () {
-            this._workspacesPage.opacity = 255;
-
-            this._workspacesDisplay.animateFromOverview(this._activePage != this._workspacesPage);
-
-            // Don't show background while animating out of applications
-            this.block_signal_handler(search_signal_page_changed);
-            this._showAppsButton.checked = false;
-            this.unblock_signal_handler(search_signal_page_changed);
-
-            if (!this._workspacesDisplay.activeWorkspaceHasMaximizedWindows())
-                Main.overview.fadeInDesktop();
-        });
-    }
-
-    if (GNOME_VERSION.startsWith("3.38")) {
-        inject(Main.overview, '_shadeBackgrounds', function () {
-            // Give Applications a transparent background so it can fade in
-            if (Main.overview.dash.showAppsButton.checked) {
-                hide_overview_backgrounds();
-            } else {
-                show_overview_backgrounds();
-            }
-
-            // Remove the code responsible for the vignette effect
-            this._backgroundGroup.get_children().forEach((background) => {
-                background.brightness = 1.0;
-                background.opacity = 255;
-
-                // VERY IMPORTANT: This somehow removes the initial workspaces
-                // darkening. Not sure how, but it does.
-                if(background.content == undefined) {
-                    // Shell version 3.36
-                    background.vignette = false;
-                    background.brightness = 1.0;
-                } else {
-                    // Shell version >= 3.38
-                    background.content.vignette = false;
-                    background.content.brightness = 1.0;
-                }
-            })
-        });
-
-        // This can be blank. I dunno why, but it can be ¯\_(ツ)_/¯
-        inject(Main.overview, '_unshadeBackgrounds', function () {
-            return true;
-        });
-    }
 
     inject(Main.layoutManager, "_updateVisibility", function () {
         let windowsVisible = (Main.sessionMode.hasWindows && !this._inOverview) || Main.overview.dash.showAppsButton.checked;
@@ -584,6 +594,12 @@ function enable() {
 }
 
 function disable() {
+    if (GNOME_VERSION.startsWith("3.38")) {
+        gnome_3_38_disable();
+    } else {
+        gnome_40_disable();
+    }
+
     // Disconnect monitors-changed handler
     if (signal_monitors_changed !== null) {
         Main.layoutManager.disconnect(signal_monitors_changed);
@@ -630,8 +646,7 @@ function disable() {
         Main.overview.dash.showAppsButton.disconnect(signal_notify_checked);
         signal_notify_checked = null;
     }
-    if (GNOME_VERSION.startsWith("3.38"))
-        Main.overview.searchEntry.show();
+    Main.overview.searchEntry.show();
 
     // Reset background changes
     Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
@@ -656,12 +671,6 @@ function disable() {
     Main.panel.statusArea.activities.disconnect(activities_signal_show);
     activities_signal_show = null;
     Main.panel.statusArea.activities.show();
-
-    // Enable the vignette effect for each actor
-    if (GNOME_VERSION.startsWith("3.38"))
-        Main.overview._backgroundGroup.get_children().forEach((actor) => {
-            actor.vignette = true;
-        }, null);
 
     // Remove injections
     let i;
