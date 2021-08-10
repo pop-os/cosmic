@@ -8,6 +8,7 @@ const Overview = imports.ui.overview;
 const OverviewControls = imports.ui.overviewControls;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
+const {ThumbnailsBox} = imports.ui.workspaceThumbnail;
 
 const GNOME_VERSION = imports.misc.config.PACKAGE_VERSION;
 
@@ -318,10 +319,18 @@ function enable() {
     });
 
     // Always show workspaces picker
-    if (GNOME_VERSION.startsWith("3.38"))
+    if (GNOME_VERSION.startsWith("3.38")) {
         inject(Main.overview._overview._controls._thumbnailsSlider, "_getAlwaysZoomOut", function () {
             return true;
         });
+    } else {
+        inject(ThumbnailsBox.prototype, "_updateShouldShow", function () {
+            if (!this._shouldShow) {
+                this._shouldShow = true;
+                this.notify('should-show');
+            }
+        });
+    }
 
     // Pop Shop details
     let original_rebuildMenu = AppDisplay.AppIconMenu.prototype._rebuildMenu;
