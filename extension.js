@@ -452,7 +452,8 @@ function gnome_40_enable() {
             Main.overview.hide();
             return Clutter.EVENT_STOP;
         } else if (this._shouldTriggerSearch(symbol)) {
-            this.startSearch(event);
+            if (Main.overview.dash.showAppsButton.checked)
+                this.startSearch(event);
         }
         return Clutter.EVENT_PROPAGATE;
     });
