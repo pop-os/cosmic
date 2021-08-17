@@ -538,6 +538,11 @@ function enable() {
         });
     }
 
+    inject(Main.overview, 'focusSearch', function () {
+        overview_show(OVERVIEW_APPLICATIONS);
+        this._overview.searchEntry.grab_key_focus();
+    });
+
     inject(Main.layoutManager, "_updateVisibility", function () {
         let windowsVisible = (Main.sessionMode.hasWindows && !this._inOverview) || Main.overview.dash.showAppsButton.checked;
 
