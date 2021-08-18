@@ -54,7 +54,7 @@ let indicatorPad = null;
 function clock_alignment(alignment) {
     // Clock Alignement breaks Date Menu, when other extensions like Dash2Panel are used
     let dash2Panel = Main.extensionManager.lookup("dash-to-panel@jderose9.github.com");
-    if(dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED){
+    if (dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED) {
         return;
     }
 
@@ -66,7 +66,7 @@ function clock_alignment(alignment) {
     const container = dateMenu.container;
     const parent = container.get_parent();
     if (parent != null) {
-        parent.remove_child (container);
+        parent.remove_child(container);
     }
 
     const banner_width = Main.panel.statusArea.dateMenu._messageList.width;
@@ -121,17 +121,64 @@ function workspace_picker_direction(controls, left) {
     });
 }
 
-var overlay_key_action = OVERVIEW_LAUNCHER;
+var overlay_key_action = null;
 
 function overlay_key() {
-    overview_toggle(overlay_key_action);
+    if (overlay_key_action !== null) {
+        overview_toggle(overlay_key_action);
+    }
 }
 
 function overlay_key_changed(settings) {
-    if (overview_visible(overlay_key_action)) {
+    const overlay_key_is_disabled = settings.get_boolean("disable-overlay-key");
+    const overlay_key_was_disabled = (overlay_key_action === null);
+
+    if (overview_visible(overlay_key_action) && !overlay_key_was_disabled) {
         overview_hide(overlay_key_action);
     }
-    overlay_key_action = settings.get_enum("overlay-key-action");
+
+    if (overlay_key_is_disabled) {
+        overlay_key_action = null;
+        if (!overlay_key_was_disabled) {
+            disconnect_overlay_key_handler();
+        }
+    } else {
+        overlay_key_action = settings.get_enum("overlay-key-action");
+        if (overlay_key_was_disabled) {
+            connect_overlay_key_handler();
+        }
+    }
+}
+
+function connect_overlay_key_handler() {
+    // Block original overlay key handler
+    original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
+    if (original_signal_overlay_key !== null) {
+        global.display.block_signal_handler(original_signal_overlay_key);
+    }
+
+    // Connect modified overlay key handler
+    const A11Y_SCHEMA = 'org.gnome.desktop.a11y.keyboard';
+    const STICKY_KEYS_ENABLE = 'stickykeys-enable';
+    let _a11ySettings = new Gio.Settings({ schema_id: A11Y_SCHEMA });
+    signal_overlay_key = global.display.connect("overlay-key", () => {
+        if (!_a11ySettings.get_boolean(STICKY_KEYS_ENABLE))
+            overlay_key();
+    });
+}
+
+function disconnect_overlay_key_handler() {
+    // Disconnect modified overlay key handler
+    if (signal_overlay_key !== null) {
+        global.display.disconnect(signal_overlay_key);
+        signal_overlay_key = null;
+    }
+
+    // Unblock original overlay key handler
+    if (original_signal_overlay_key !== null) {
+        global.display.unblock_signal_handler(original_signal_overlay_key);
+        original_signal_overlay_key = null;
+    }
 }
 
 
@@ -275,17 +322,17 @@ function page_changed() {
         }
 
         view.ease({
-           opacity: opacity,
-           duration: Overview.ANIMATION_TIME,
-           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            opacity: opacity,
+            duration: Overview.ANIMATION_TIME,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         });
     });
 }
 
 function page_empty() {
     getWorkspacesDisplay()._workspacesViews.forEach(view => {
-       if (Main.overview.dash.showAppsButton.checked && view._monitorIndex != Main.layoutManager.primaryIndex)
-           view.opacity = 0;
+        if (Main.overview.dash.showAppsButton.checked && view._monitorIndex != Main.layoutManager.primaryIndex)
+            view.opacity = 0;
     });
 }
 
@@ -293,7 +340,7 @@ function monitors_changed() {
     clock_alignment(settings.get_enum("clock-alignment"));
 }
 
-function init(metadata) {}
+function init(metadata) { }
 
 function enable() {
     // Raise first window on alt-tab
@@ -351,13 +398,13 @@ function enable() {
     }
 
     // Hide activities button
-    activities_signal_show = Main.panel.statusArea.activities.connect("show", function() {
+    activities_signal_show = Main.panel.statusArea.activities.connect("show", function () {
         Main.panel.statusArea.activities.hide();
     });
     Main.panel.statusArea.activities.hide();
 
     // Hide app menu
-    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function() {
+    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function () {
         Main.panel.statusArea.appMenu.hide();
     });
     Main.panel.statusArea.appMenu.hide();
@@ -367,6 +414,9 @@ function enable() {
     // Load overlay key action and keep it up to date with settings
     overlay_key_changed(settings);
     settings.connect("changed::overlay-key-action", () => {
+        overlay_key_changed(settings);
+    });
+    settings.connect("changed::disable-overlay-key", () => {
         overlay_key_changed(settings);
     });
 
@@ -470,7 +520,7 @@ function enable() {
 
                 // VERY IMPORTANT: This somehow removes the initial workspaces
                 // darkening. Not sure how, but it does.
-                if(background.content == undefined) {
+                if (background.content == undefined) {
                     // Shell version 3.36
                     background.vignette = false;
                     background.brightness = 1.0;
@@ -495,21 +545,6 @@ function enable() {
         global.top_window_group.visible = windowsVisible;
 
         this._trackedActors.forEach(this._updateActorVisibility.bind(this));
-    });
-
-    // Block original overlay key handler
-    original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
-    if (original_signal_overlay_key !== null) {
-        global.display.block_signal_handler(original_signal_overlay_key);
-    }
-
-    // Connect modified overlay key handler
-    const A11Y_SCHEMA = 'org.gnome.desktop.a11y.keyboard';
-    const STICKY_KEYS_ENABLE = 'stickykeys-enable';
-    let _a11ySettings = new Gio.Settings({ schema_id: A11Y_SCHEMA });
-    signal_overlay_key = global.display.connect("overlay-key", () => {
-        if (!_a11ySettings.get_boolean(STICKY_KEYS_ENABLE))
-            overlay_key();
     });
 
     // Make applications shortcut hide/show overview
@@ -551,7 +586,7 @@ function disable() {
     Main.wm.removeKeybinding('toggle-application-view');
 
     let obj = GNOME_VERSION.startsWith("3.38") ? Main.overview.viewSelector
-                                               : Main.overview._overview._controls;
+        : Main.overview._overview._controls;
     Main.wm.addKeybinding(
         'toggle-application-view',
         new Gio.Settings({ schema_id: SHELL_KEYBINDINGS_SCHEMA }),
@@ -561,17 +596,7 @@ function disable() {
         obj._toggleAppsPage.bind(obj)
     );
 
-    // Disconnect modified overlay key handler
-    if (signal_overlay_key !== null) {
-        global.display.disconnect(signal_overlay_key);
-        signal_overlay_key = null;
-    }
-
-    // Unblock original overlay key handler
-    if (original_signal_overlay_key !== null) {
-        global.display.unblock_signal_handler(original_signal_overlay_key);
-        original_signal_overlay_key = null;
-    }
+    disconnect_overlay_key_handler();
 
     // Show search
     if (search_signal_page_changed !== null) {
@@ -621,9 +646,9 @@ function disable() {
 
     // Remove injections
     let i;
-    for(i in injections) {
-       let injection = injections[i];
-       injection["object"][injection["parameter"]] = injection["value"];
+    for (i in injections) {
+        let injection = injections[i];
+        injection["object"][injection["parameter"]] = injection["value"];
     }
 
     clock_alignment(CLOCK_CENTER);
