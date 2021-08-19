@@ -16,9 +16,6 @@
           <summary>Overlay key action</summary>
           <description>Controls the action of the overlay key, typically Super</description>
         </key>
-        <key type="b" name="disable-overlay-key">
-            <default>false</default>
-        </key>
         <key type="b" name="show-applications-button">
             <default>true</default>
         </key>

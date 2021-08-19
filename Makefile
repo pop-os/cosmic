@@ -14,7 +14,6 @@ SRC = extension.js \
       metadata.json \
       overview.js \
       prefs.js \
-      prefs.ui \
       schemas/gschemas.compiled \
       schemas/org.gnome.shell.extensions.pop-cosmic.gschema.xml \
       settings.js \
