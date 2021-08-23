@@ -137,20 +137,16 @@ function overlay_key_changed(settings) {
         overview_hide(overlay_key_action);
     }
 
-    if (overlay_key_is_disabled) {
-        overlay_key_action = null;
-        if (!overlay_key_was_disabled) {
-            disconnect_overlay_key_handler();
-        }
-    } else {
-        overlay_key_action = settings.get_enum("overlay-key-action");
-        if (overlay_key_was_disabled) {
-            connect_overlay_key_handler();
-        }
+    if (overlay_key_is_disabled && !overlay_key_was_disabled) {
+        disconnect_overlay_key_handler();
+    } else if (!overlay_key_is_disabled && overlay_key_was_disabled) {
+        connect_overlay_key_handler(settings.get_enum("overlay-key-action"));
     }
 }
 
-function connect_overlay_key_handler() {
+function connect_overlay_key_handler(action) {
+    overlay_key_action = action;
+
     // Block original overlay key handler
     original_signal_overlay_key = GObject.signal_handler_find(global.display, { signalId: "overlay-key" });
     if (original_signal_overlay_key !== null) {
@@ -168,6 +164,8 @@ function connect_overlay_key_handler() {
 }
 
 function disconnect_overlay_key_handler() {
+    overlay_key_action = null;
+
     // Disconnect modified overlay key handler
     if (signal_overlay_key !== null) {
         global.display.disconnect(signal_overlay_key);
