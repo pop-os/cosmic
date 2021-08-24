@@ -1,12 +1,13 @@
+use clutter::{
+    Actor,
+    traits::ActorExt,
+};
 use clutter_sys::{
     CLUTTER_CURRENT_TIME,
     ClutterColor,
     ClutterKeyEvent,
     clutter_actor_add_child,
-    clutter_actor_get_content,
     clutter_actor_insert_child_below,
-    clutter_actor_set_position,
-    clutter_actor_set_size,
     clutter_actor_show,
     clutter_get_current_event_time,
 };
@@ -14,6 +15,7 @@ use gdesktop_enums_sys::{
     G_DESKTOP_BACKGROUND_STYLE_ZOOM,
 };
 use glib::{
+    Cast,
     translate::{FromGlibPtrNone, ToGlibPtr},
 };
 use glib_sys::{
@@ -22,16 +24,22 @@ use glib_sys::{
 };
 use gobject_sys::{
     g_object_unref,
-    g_type_check_instance_cast,
 };
 use libc::c_int;
 use log::{
     error,
     info,
 };
+use meta::{
+    BackgroundActor,
+    BackgroundContent,
+    Display,
+    Plugin,
+    TabList,
+    traits::PluginExt,
+};
 use meta_sys::{
     META_KEY_BINDING_NONE,
-    MetaBackgroundContent,
     MetaDisplay,
     MetaKeyBinding,
     MetaMotionDirection,
@@ -40,8 +48,6 @@ use meta_sys::{
     MetaRectangle,
     MetaWindow,
     MetaWindowActor,
-    meta_background_actor_new,
-    meta_background_content_get_type,
     meta_background_content_set_background,
     meta_background_group_new,
     meta_background_new,
@@ -57,12 +63,6 @@ use meta_sys::{
     meta_plugin_switch_workspace_completed,
     meta_plugin_unminimize_completed,
     meta_window_actor_get_meta_window,
-};
-use meta::{
-    Display,
-    Plugin,
-    TabList,
-    traits::PluginExt,
 };
 use std::{
     ptr
@@ -340,20 +340,21 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     for monitor in 0..display.n_monitors() {
         let rect = display.monitor_geometry(monitor);
 
-        let background_actor = meta_background_actor_new(display.to_glib_none().0, monitor);
-        let content = clutter_actor_get_content(background_actor);
-        let background_content = g_type_check_instance_cast(content as *mut _, meta_background_content_get_type()) as *mut MetaBackgroundContent;
+        let background_actor = BackgroundActor::new(&display, monitor);
+        let content = background_actor.content().expect("no BackgroundActor content");
+        let background_content = content.downcast::<BackgroundContent>()
+            .expect("failed to downcast BackgroundActor content to BackgroundContent");
 
-        clutter_actor_set_position(background_actor, rect.x() as f32, rect.y() as f32);
-        clutter_actor_set_size(background_actor, rect.width() as f32, rect.height() as f32);
+        background_actor.set_position(rect.x() as f32, rect.y() as f32);
+        background_actor.set_size(rect.width() as f32, rect.height() as f32);
 
         let background = meta_background_new(display.to_glib_none().0);
         meta_background_set_color(background, &mut color);
         meta_background_set_file(background, background_file.to_glib_none().0, G_DESKTOP_BACKGROUND_STYLE_ZOOM);
-        meta_background_content_set_background(background_content, background);
+        meta_background_content_set_background(background_content.to_glib_none().0, background);
         g_object_unref(background as *mut _);
 
-        clutter_actor_add_child(background_group, background_actor);
+        clutter_actor_add_child(background_group, background_actor.upcast::<Actor>().to_glib_none().0);
     }
 
     clutter_actor_show(meta_get_stage_for_display(display.to_glib_none().0));

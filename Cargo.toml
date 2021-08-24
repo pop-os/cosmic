@@ -15,6 +15,10 @@ gobject-sys = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 libc = "0.2.100"
 log = "0.4.14"
 
+[dependencies.clutter]
+path = "mutter-rs/clutter"
+features = ["v1_10"]
+
 [dependencies.clutter-sys]
 path = "mutter-rs/clutter-sys"
 features = ["v1_10"]
@@ -22,8 +26,8 @@ features = ["v1_10"]
 [dependencies.gdesktop_enums-sys]
 path = "mutter-rs/gdesktop_enums-sys"
 
-[dependencies.meta-sys]
-path = "mutter-rs/meta-sys"
-
 [dependencies.meta]
 path = "mutter-rs/meta"
+
+[dependencies.meta-sys]
+path = "mutter-rs/meta-sys"

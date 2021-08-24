@@ -496,6 +496,7 @@ name = "pop-cosmic"
 version = "0.1.0"
 dependencies = [
  "cc",
+ "clutter",
  "clutter-sys",
  "env_logger",
  "gdesktop_enums-sys",
