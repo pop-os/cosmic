@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=pop-cosmic
+NoDisplay=true
+Comment=Pop COSMIC
+Exec=pop-cosmic
+X-GNOME-WMName=pop-cosmic
+X-GNOME-Autostart-Phase=WindowManager
+X-GNOME-Provides=windowmanager
+X-GNOME-Autostart-Notify=false

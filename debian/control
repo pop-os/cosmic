@@ -1,13 +1,17 @@
 Source: pop-cosmic
-Section: gnome
+Section: x11
 Priority: optional
 Maintainer: Jeremy Soller <jeremy@system76.com>
-Build-Depends: debhelper (>= 10), libglib2.0-bin
-Standards-Version: 3.9.8
+Build-Depends:
+  debhelper (>= 10),
+  cargo,
+Standards-Version: 4.1.1
 Homepage: https://github.com/pop-os/cosmic
 Vcs-Git: https://github.com/pop-os/cosmic.git
 
 Package: pop-cosmic
-Architecture: all
-Depends: gnome-shell (>= 3.38), ${misc:Depends}
+Architecture: amd64
+Depends:
+  ${misc:Depends},
+  ${shlib:Depends}
 Description: Computer Operating System Main Interface Components

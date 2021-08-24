@@ -1,45 +1,64 @@
-# Basic Makefile
+prefix ?= /usr
+sysconfdir ?= /etc
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+includedir = $(prefix)/include
+datarootdir = $(prefix)/share
+datadir = $(datarootdir)
 
-# Retrieve the UUID from ``metadata.json``
-UUID = $(shell grep -E '^[ ]*"uuid":' ./metadata.json | sed 's@^[ ]*"uuid":[ ]*"\(.\+\)",[ ]*@\1@')
+SRC = Cargo.toml Cargo.lock Makefile $(shell find src -type f -wholename '*src/*.rs')
 
-ifeq ($(strip $(DESTDIR)),)
-INSTALLBASE = $(HOME)/.local/share/gnome-shell/extensions
-else
-INSTALLBASE = $(DESTDIR)/usr/share/gnome-shell/extensions
+.PHONY: all clean distclean install uninstall update
+
+BIN=pop-cosmic
+
+DEBUG ?= 0
+ifeq ($(DEBUG),0)
+	ARGS += "--release"
+	TARGET = release
 endif
-INSTALLNAME = $(UUID)
 
-SRC = extension.js \
-      metadata.json \
-      overview.js \
-      prefs.js \
-      schemas/gschemas.compiled \
-      schemas/org.gnome.shell.extensions.pop-cosmic.gschema.xml \
-      settings.js \
-      topBarButton.js
+VENDORED ?= 0
+ifeq ($(VENDORED),1)
+	ARGS += "--frozen" "--offline"
+endif
 
-$(info UUID is "$(UUID)")
-
-.PHONY: all clean install zip-file
-
-all: $(SRC)
-	rm -rf build
-	for i in $^ ; do \
-		mkdir -p build/$$(dirname $$i) ; \
-		cp $$i build/$$i ; \
-	done
-
-schemas/gschemas.compiled: schemas/*.gschema.xml
-	glib-compile-schemas schemas
+all: target/$(TARGET)/$(BIN)
 
 clean:
-	rm -rf build
+	cargo clean
+
+distclean:
+	rm -rf .cargo vendor vendor.tar.xz
 
 install: all
-	rm -rf $(INSTALLBASE)/$(INSTALLNAME)
-	mkdir -p $(INSTALLBASE)/$(INSTALLNAME)
-	cp -r build/* $(INSTALLBASE)/$(INSTALLNAME)/
+	install -D -m 0755 "target/$(TARGET)/$(BIN)" "$(DESTDIR)$(bindir)/$(BIN)"
 
-zip-file: all
-	cd build && zip -qr "../$(UUID)$(VSTRING).zip" .
+uninstall:
+	rm -f "$(DESTDIR)$(bindir)/$(BIN)"
+
+update:
+	cargo update
+
+vendor:
+	mkdir -p .cargo
+	cargo vendor | head -n -1 > .cargo/config
+	echo 'directory = "vendor"' >> .cargo/config
+	tar pcfJ vendor.tar.xz vendor
+	rm -rf vendor
+
+target/c/wrapper.o: src/wrapper.c
+	mkdir -p target/c
+	$(CC) -c $^ -o $@ -Werror \
+		-Wl,-rpath /usr/lib/x86_64-linux-gnu/mutter-8 \
+		$(shell pkg-config --cflags --libs libmutter-8)
+
+target/c/libwrapper.a: target/c/wrapper.o
+	ar -rc $@ $^
+
+target/$(TARGET)/$(BIN): $(SRC) target/c/libwrapper.a
+ifeq ($(VENDORED),1)
+	tar pxf vendor.tar.xz
+endif
+	cargo build $(ARGS)

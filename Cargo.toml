@@ -1,0 +1,32 @@
+[package]
+name = "pop-cosmic"
+version = "0.1.0"
+edition = "2018"
+
+[build-dependencies]
+cc = "1.0.69"
+
+[dependencies]
+libc = "0.2.99"
+
+[dependencies.clutter-sys]
+git = "https://github.com/pop-os/mutter-rs"
+features = ["v1_10"]
+
+[dependencies.gdesktop_enums-sys]
+git = "https://github.com/pop-os/mutter-rs"
+
+[dependencies.gio-sys]
+git = "https://github.com/gtk-rs/gtk-rs-core"
+
+[dependencies.glib]
+git = "https://github.com/gtk-rs/gtk-rs-core"
+
+[dependencies.gobject-sys]
+git = "https://github.com/gtk-rs/gtk-rs-core"
+
+[dependencies.glib-sys]
+git = "https://github.com/gtk-rs/gtk-rs-core"
+
+[dependencies.meta-sys]
+git = "https://github.com/pop-os/mutter-rs"
