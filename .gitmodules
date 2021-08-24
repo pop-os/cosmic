@@ -1,0 +1,4 @@
+[submodule "mutter-rs"]
+	path = mutter-rs
+	url = https://github.com/pop-os/mutter-rs.git
+	branch = main

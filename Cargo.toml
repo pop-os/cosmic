@@ -8,30 +8,22 @@ cc = "1.0.69"
 
 [dependencies]
 env_logger = "0.9.0"
+gio = { git = "https://github.com/gtk-rs/gtk-rs-core" }
+glib = { git = "https://github.com/gtk-rs/gtk-rs-core" }
+glib-sys = { git = "https://github.com/gtk-rs/gtk-rs-core" }
+gobject-sys = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 libc = "0.2.100"
 log = "0.4.14"
 
 [dependencies.clutter-sys]
-git = "https://github.com/pop-os/mutter-rs"
+path = "mutter-rs/clutter-sys"
 features = ["v1_10"]
 
 [dependencies.gdesktop_enums-sys]
-git = "https://github.com/pop-os/mutter-rs"
-
-[dependencies.gio]
-git = "https://github.com/gtk-rs/gtk-rs-core"
-
-[dependencies.gio-sys]
-git = "https://github.com/gtk-rs/gtk-rs-core"
-
-[dependencies.glib]
-git = "https://github.com/gtk-rs/gtk-rs-core"
-
-[dependencies.gobject-sys]
-git = "https://github.com/gtk-rs/gtk-rs-core"
-
-[dependencies.glib-sys]
-git = "https://github.com/gtk-rs/gtk-rs-core"
+path = "mutter-rs/gdesktop_enums-sys"
 
 [dependencies.meta-sys]
-git = "https://github.com/pop-os/mutter-rs"
+path = "mutter-rs/meta-sys"
+
+[dependencies.meta]
+path = "mutter-rs/meta"

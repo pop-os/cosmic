@@ -19,17 +19,6 @@ checksum = "28ae2b3dec75a406790005a200b1bd89785afc02517a00ca99ecfe093ee9e6cf"
 
 [[package]]
 name = "atk-sys"
-version = "0.0.1"
-source = "git+https://github.com/pop-os/mutter-rs#7945617ed7a67e12b723b43890fc7522fe4e849e"
-dependencies = [
- "glib-sys",
- "gobject-sys",
- "libc",
- "system-deps",
-]
-
-[[package]]
-name = "atk-sys"
 version = "0.15.0"
 source = "git+https://github.com/gtk-rs/gtk3-rs#eed0e289d19ec674a9274974f184a5cfdc4ca071"
 dependencies = [
@@ -63,10 +52,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "cairo-rs"
+version = "0.15.0"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#db041297159cab441865c7cb82b7ea8205141ace"
+dependencies = [
+ "bitflags",
+ "cairo-sys-rs",
+ "glib",
+ "libc",
+ "thiserror",
+]
+
+[[package]]
 name = "cairo-sys-rs"
 version = "0.15.0"
 source = "git+https://github.com/gtk-rs/gtk-rs-core#db041297159cab441865c7cb82b7ea8205141ace"
 dependencies = [
+ "glib-sys",
  "libc",
  "system-deps",
 ]
@@ -93,11 +95,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "clutter"
+version = "0.0.1"
+dependencies = [
+ "bitflags",
+ "clutter-sys",
+ "glib",
+ "libc",
+]
+
+[[package]]
 name = "clutter-sys"
 version = "0.0.1"
-source = "git+https://github.com/pop-os/mutter-rs#7945617ed7a67e12b723b43890fc7522fe4e849e"
 dependencies = [
- "atk-sys 0.0.1",
+ "atk-sys",
  "cairo-sys-rs",
  "cogl-sys",
  "gio-sys",
@@ -113,7 +124,6 @@ dependencies = [
 [[package]]
 name = "cogl-sys"
 version = "0.0.1"
-source = "git+https://github.com/pop-os/mutter-rs#7945617ed7a67e12b723b43890fc7522fe4e849e"
 dependencies = [
  "cairo-sys-rs",
  "glib-sys",
@@ -195,9 +205,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gdesktop_enums"
+version = "0.0.1"
+dependencies = [
+ "bitflags",
+ "gdesktop_enums-sys",
+ "glib",
+ "libc",
+]
+
+[[package]]
 name = "gdesktop_enums-sys"
 version = "0.0.1"
-source = "git+https://github.com/pop-os/mutter-rs#7945617ed7a67e12b723b43890fc7522fe4e849e"
 dependencies = [
  "glib-sys",
  "libc",
@@ -327,7 +346,7 @@ name = "gtk-sys"
 version = "0.15.0"
 source = "git+https://github.com/gtk-rs/gtk3-rs#eed0e289d19ec674a9274974f184a5cfdc4ca071"
 dependencies = [
- "atk-sys 0.15.0",
+ "atk-sys",
  "cairo-sys-rs",
  "gdk-pixbuf-sys",
  "gdk-sys",
@@ -375,7 +394,6 @@ dependencies = [
 [[package]]
 name = "json-sys"
 version = "0.0.1"
-source = "git+https://github.com/pop-os/mutter-rs#7945617ed7a67e12b723b43890fc7522fe4e849e"
 dependencies = [
  "gio-sys",
  "glib-sys",
@@ -406,9 +424,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
 
 [[package]]
+name = "meta"
+version = "0.0.1"
+dependencies = [
+ "bitflags",
+ "cairo-rs",
+ "clutter",
+ "gdesktop_enums",
+ "gio",
+ "glib",
+ "libc",
+ "meta-sys",
+]
+
+[[package]]
 name = "meta-sys"
 version = "0.0.1"
-source = "git+https://github.com/pop-os/mutter-rs#7945617ed7a67e12b723b43890fc7522fe4e849e"
 dependencies = [
  "cairo-sys-rs",
  "clutter-sys",
@@ -469,12 +500,12 @@ dependencies = [
  "env_logger",
  "gdesktop_enums-sys",
  "gio",
- "gio-sys",
  "glib",
  "glib-sys",
  "gobject-sys",
  "libc",
  "log",
+ "meta",
  "meta-sys",
 ]
 
@@ -708,7 +739,6 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "xlib-sys"
 version = "0.0.1"
-source = "git+https://github.com/pop-os/mutter-rs#7945617ed7a67e12b723b43890fc7522fe4e849e"
 dependencies = [
  "glib-sys",
  "libc",

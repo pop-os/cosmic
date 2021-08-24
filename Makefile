@@ -7,7 +7,7 @@ includedir = $(prefix)/include
 datarootdir = $(prefix)/share
 datadir = $(datarootdir)
 
-SRC = Cargo.toml Cargo.lock Makefile $(shell find src -type f -wholename '*src/*.rs')
+SRC = Cargo.toml Cargo.lock build.rs $(shell find src -type f -wholename '*src/*.rs')
 
 .PHONY: all clean distclean install uninstall update
 
@@ -48,10 +48,10 @@ vendor:
 	tar pcfJ vendor.tar.xz vendor
 	rm -rf vendor
 
-target/wrapper/wrapper.h: src/wrapper.rs
+target/wrapper/wrapper.h: src/wrapper.rs cbindgen.toml
 	mkdir -p target/wrapper
-	rustc -Z parse-only $<
 	cbindgen --config cbindgen.toml --output $@ $<
+	touch $@
 
 target/wrapper/wrapper.o: src/wrapper.c target/wrapper/wrapper.h
 	$(CC) -c $< -o $@ -Itarget/wrapper -Werror \
