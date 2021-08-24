@@ -64,4 +64,5 @@ target/$(TARGET)/$(BIN): $(SRC) target/wrapper/libwrapper.a
 ifeq ($(VENDORED),1)
 	tar pxf vendor.tar.xz
 endif
-	cargo build $(ARGS)
+	cargo rustc $(ARGS) --bin $(BIN) -- \
+	    -C link-arg=-Wl,-rpath,/usr/lib/x86_64-linux-gnu/mutter-8
