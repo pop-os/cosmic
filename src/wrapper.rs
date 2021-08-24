@@ -136,35 +136,18 @@ fn focus_direction(display: &mut Display, direction: Direction) {
         current_rect.y(),
         current_rect.y() + current_rect.height(),
     );
-    let current_window_ptr: *mut MetaWindow = current_window.to_glib_none().0;
 
     let mut closest_dist = 0;
     let mut closest = None;
-    let mut window_iter = unsafe { Window::from_glib_none(current_window_ptr) };
+    let mut window = current_window.clone();
     loop {
-        let window = match display.tab_next(
-            TabList::NormalAll,
-            &workspace,
-            Some(&window_iter),
-            false
-        ) {
-            Some(some) => some,
+        match display.tab_next(TabList::NormalAll, &workspace, Some(&window), false) {
+            Some(some) => window = some,
             None => break,
-        };
+        }
 
-        window_iter = unsafe {
-            let window_ptr: *mut MetaWindow = window.to_glib_none().0;
-            if window_ptr == current_window_ptr { break; }
-            Window::from_glib_none(window_ptr)
-        };
-
-        unsafe {
-            println!(
-                "{:?}",
-                std::ffi::CStr::from_ptr(
-                    meta_sys::meta_window_get_title(window.to_glib_none().0)
-                )
-            );
+        if window.id() == current_window.id() {
+            break;
         }
 
         let rect = window.frame_rect();
@@ -248,7 +231,7 @@ fn focus_direction(display: &mut Display, direction: Direction) {
         // Save if closer than closest distance
         if dist < closest_dist || closest.is_none() {
             closest_dist = dist;
-            closest = Some(window);
+            closest = Some(window.clone());
         }
     }
 
