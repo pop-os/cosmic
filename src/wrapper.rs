@@ -12,7 +12,7 @@ use gdesktop_enums_sys::{
     G_DESKTOP_BACKGROUND_STYLE_ZOOM,
 };
 use glib::{
-    translate::ToGlibPtr,
+    translate::{FromGlibPtrNone, ToGlibPtr},
 };
 use glib_sys::{
     GTRUE,
@@ -26,7 +26,6 @@ use libc::c_int;
 use log::error;
 use meta_sys::{
     META_KEY_BINDING_NONE,
-    META_TAB_LIST_NORMAL_ALL,
     MetaBackgroundContent,
     MetaDisplay,
     MetaKeyBinding,
@@ -44,31 +43,28 @@ use meta_sys::{
     meta_background_set_color,
     meta_background_set_file,
     meta_display_add_keybinding,
-    meta_display_get_monitor_geometry,
-    meta_display_get_n_monitors,
     meta_get_stage_for_display,
     meta_get_window_group_for_display,
     meta_plugin_complete_display_change,
     meta_plugin_destroy_completed,
-    meta_plugin_get_display,
     meta_plugin_map_completed,
     meta_plugin_minimize_completed,
     meta_plugin_switch_workspace_completed,
     meta_plugin_unminimize_completed,
     meta_window_actor_get_meta_window,
 };
+use meta::{
+    Display,
+    Plugin,
+    TabList,
+    Window,
+    traits::PluginExt,
+};
 use std::{
     ptr
 };
 
-use crate::{
-    c_str,
-    meta::{
-        Display,
-        Plugin,
-        Window,
-    },
-};
+use crate::c_str;
 
 #[repr(C)]
 pub struct CosmicPluginData;
@@ -114,14 +110,14 @@ enum Direction {
 }
 
 fn focus_direction(display: &mut Display, direction: Direction) {
-    let mut workspace_manager = match display.get_workspace_manager() {
+    let workspace_manager = match display.workspace_manager() {
         Some(some) => some,
         None => {
             error!("failed to get workspace manager");
             return;
         }
     };
-    let mut workspace = match workspace_manager.get_active_workspace() {
+    let workspace = match workspace_manager.active_workspace() {
         Some(some) => some,
         None => {
             error!("failed to get active workspace");
@@ -129,27 +125,27 @@ fn focus_direction(display: &mut Display, direction: Direction) {
         }
     };
 
-    let mut current_window = match display.get_tab_current(META_TAB_LIST_NORMAL_ALL, &mut workspace) {
+    let current_window = match display.tab_current(TabList::NormalAll, &workspace) {
         Some(some) => some,
         None => return,
     };
-    let current_rect = current_window.get_frame_rect();
+    let current_rect = current_window.frame_rect();
     let (current_left, current_right, current_top, current_bottom) = (
-        current_rect.x,
-        current_rect.x + current_rect.width,
-        current_rect.y,
-        current_rect.y + current_rect.height,
+        current_rect.x(),
+        current_rect.x() + current_rect.width(),
+        current_rect.y(),
+        current_rect.y() + current_rect.height(),
     );
-    let current_window_ptr = unsafe { current_window.as_ptr() };
+    let current_window_ptr: *mut MetaWindow = current_window.to_glib_none().0;
 
     let mut closest_dist = 0;
     let mut closest = None;
-    let mut window_iter = unsafe { Window::from_ptr(current_window_ptr).unwrap() };
+    let mut window_iter = unsafe { Window::from_glib_none(current_window_ptr) };
     loop {
-        let mut window = match display.get_tab_next(
-            META_TAB_LIST_NORMAL_ALL,
-            &mut workspace,
-            &mut window_iter,
+        let window = match display.tab_next(
+            TabList::NormalAll,
+            &workspace,
+            Some(&window_iter),
             false
         ) {
             Some(some) => some,
@@ -157,26 +153,26 @@ fn focus_direction(display: &mut Display, direction: Direction) {
         };
 
         window_iter = unsafe {
-            let window_ptr = window.as_ptr();
+            let window_ptr: *mut MetaWindow = window.to_glib_none().0;
             if window_ptr == current_window_ptr { break; }
-            Window::from_ptr(window_ptr).unwrap()
+            Window::from_glib_none(window_ptr)
         };
 
         unsafe {
             println!(
                 "{:?}",
                 std::ffi::CStr::from_ptr(
-                    meta_sys::meta_window_get_title(window.as_ptr())
+                    meta_sys::meta_window_get_title(window.to_glib_none().0)
                 )
             );
         }
 
-        let rect = window.get_frame_rect();
+        let rect = window.frame_rect();
         let (window_left, window_right, window_top, window_bottom) = (
-            rect.x,
-            rect.x + rect.width,
-            rect.y,
-            rect.y + rect.height,
+            rect.x(),
+            rect.x() + rect.width(),
+            rect.y(),
+            rect.y() + rect.height(),
         );
 
         // Window is not intersecting vertically
@@ -256,8 +252,8 @@ fn focus_direction(display: &mut Display, direction: Direction) {
         }
     }
 
-    if let Some(mut window) = closest {
-        window.focus(display.get_current_time());
+    if let Some(window) = closest {
+        window.focus(display.current_time());
     }
 }
 
@@ -268,13 +264,7 @@ unsafe extern "C" fn on_focus_c(
     _key_binding: *mut MetaKeyBinding,
     data: gpointer
 ) {
-    let mut display = match Display::from_ptr(display) {
-        Some(some) => some,
-        None => {
-            error!("no display found");
-            return;
-        },
-    };
+    let mut display = Display::from_glib_none(display);
     let direction = match data as usize {
         1 => Direction::Left,
         2 => Direction::Right,
@@ -334,12 +324,12 @@ pub unsafe extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, act
 pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     println!("STARTING COSMIC PLUGIN");
 
-    let mut plugin = Plugin::from_ptr(plugin).expect("no plugin found");
+    let plugin = Plugin::from_glib_none(plugin);
 
-    let mut display = plugin.get_display().expect("no display found");
+    let display = plugin.display().expect("no display found");
 
     let background_group = meta_background_group_new();
-    clutter_actor_insert_child_below(meta_get_window_group_for_display(display.as_ptr()), background_group, ptr::null_mut());
+    clutter_actor_insert_child_below(meta_get_window_group_for_display(display.to_glib_none().0), background_group, ptr::null_mut());
 
     let mut color = ClutterColor {
         red: 128,
@@ -352,17 +342,17 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         "/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png"
     );
 
-    for monitor in 0..display.get_n_monitors() {
-        let rect = display.get_monitor_geometry(monitor);
+    for monitor in 0..display.n_monitors() {
+        let rect = display.monitor_geometry(monitor);
 
-        let background_actor = meta_background_actor_new(display.as_ptr(), monitor);
+        let background_actor = meta_background_actor_new(display.to_glib_none().0, monitor);
         let content = clutter_actor_get_content(background_actor);
         let background_content = g_type_check_instance_cast(content as *mut _, meta_background_content_get_type()) as *mut MetaBackgroundContent;
 
-        clutter_actor_set_position(background_actor, rect.x as f32, rect.y as f32);
-        clutter_actor_set_size(background_actor, rect.width as f32, rect.height as f32);
+        clutter_actor_set_position(background_actor, rect.x() as f32, rect.y() as f32);
+        clutter_actor_set_size(background_actor, rect.width() as f32, rect.height() as f32);
 
-        let background = meta_background_new(display.as_ptr());
+        let background = meta_background_new(display.to_glib_none().0);
         meta_background_set_color(background, &mut color);
         meta_background_set_file(background, background_file.to_glib_none().0, G_DESKTOP_BACKGROUND_STYLE_ZOOM);
         meta_background_content_set_background(background_content, background);
@@ -371,11 +361,11 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         clutter_actor_add_child(background_group, background_actor);
     }
 
-    clutter_actor_show(meta_get_stage_for_display(display.as_ptr()));
+    clutter_actor_show(meta_get_stage_for_display(display.to_glib_none().0));
 
     let settings = gio::Settings::new("org.gnome.shell.keybindings");
     meta_display_add_keybinding(
-        display.as_ptr(),
+        display.to_glib_none().0,
         c_str!("toggle-overview"),
         settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
@@ -386,7 +376,7 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
 
     let settings = gio::Settings::new("org.gnome.shell.extensions.pop-shell");
     meta_display_add_keybinding(
-        display.as_ptr(),
+        display.to_glib_none().0,
         c_str!("focus-left"),
         settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
@@ -395,7 +385,7 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         None,
     );
     meta_display_add_keybinding(
-        display.as_ptr(),
+        display.to_glib_none().0,
         c_str!("focus-right"),
         settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
@@ -404,7 +394,7 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         None,
     );
     meta_display_add_keybinding(
-        display.as_ptr(),
+        display.to_glib_none().0,
         c_str!("focus-up"),
         settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
@@ -413,7 +403,7 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         None,
     );
     meta_display_add_keybinding(
-        display.as_ptr(),
+        display.to_glib_none().0,
         c_str!("focus-down"),
         settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
