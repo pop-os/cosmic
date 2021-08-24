@@ -94,7 +94,7 @@ enum Direction {
     Down,
 }
 
-unsafe fn focus_dir(display: *mut MetaDisplay, direction: Direction) {
+unsafe fn focus_direction(display: *mut MetaDisplay, direction: Direction) {
     let workspace_manager = meta_display_get_workspace_manager(display);
     let workspace = meta_workspace_manager_get_active_workspace(workspace_manager);
 
@@ -224,7 +224,7 @@ unsafe extern "C" fn on_focus_left(
     data: gpointer
 ) {
     println!("on_focus_left");
-    focus_dir(display, Direction::Left);
+    focus_direction(display, Direction::Left);
 }
 
 unsafe extern "C" fn on_focus_right(
@@ -235,7 +235,7 @@ unsafe extern "C" fn on_focus_right(
     data: gpointer
 ) {
     println!("on_focus_right");
-    focus_dir(display, Direction::Right);
+    focus_direction(display, Direction::Right);
 }
 
 unsafe extern "C" fn on_focus_up(
@@ -246,7 +246,7 @@ unsafe extern "C" fn on_focus_up(
     data: gpointer
 ) {
     println!("on_focus_up");
-    focus_dir(display, Direction::Up);
+    focus_direction(display, Direction::Up);
 }
 
 unsafe extern "C" fn on_focus_down(
@@ -257,7 +257,7 @@ unsafe extern "C" fn on_focus_down(
     data: gpointer
 ) {
     println!("on_focus_down");
-    focus_dir(display, Direction::Down);
+    focus_direction(display, Direction::Down);
 }
 
 #[no_mangle] pub unsafe extern "C" fn cosmic_plugin_confirm_display_change(plugin: *mut MetaPlugin) {

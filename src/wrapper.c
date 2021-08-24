@@ -1,22 +1,6 @@
 #include <meta/meta-plugin.h>
+#include "wrapper.h"
 
-/* Functions that must be implemented by Rust code { */
-void cosmic_plugin_confirm_display_change(MetaPlugin *plugin);
-void cosmic_plugin_destroy(MetaPlugin *plugin, MetaWindowActor *actor);
-void cosmic_plugin_hide_tile_preview(MetaPlugin *plugin);
-const MetaPluginInfo *cosmic_plugin_info(MetaPlugin *plugin);
-void cosmic_plugin_kill_switch_workspace(MetaPlugin *plugin);
-void cosmic_plugin_kill_window_effects(MetaPlugin *plugin, MetaWindowActor *actor);
-void cosmic_plugin_map(MetaPlugin *plugin, MetaWindowActor *actor);
-void cosmic_plugin_minimize(MetaPlugin *plugin, MetaWindowActor *actor);
-void cosmic_plugin_show_tile_preview(MetaPlugin *plugin, MetaWindow *window, MetaRectangle *tile_rect, int tile_monitor_number);
-void cosmic_plugin_size_changed(MetaPlugin *plugin, MetaWindowActor *actor);
-void cosmic_plugin_start(MetaPlugin *plugin);
-void cosmic_plugin_switch_workspace(MetaPlugin *plugin, gint from, gint to, MetaMotionDirection direction);
-void cosmic_plugin_unminimize(MetaPlugin *plugin, MetaWindowActor *actor);
-/* } Functions that must be implemented by Rust code */
-
-/* GObject boilerplate { */
 #define COSMIC_TYPE_PLUGIN (cosmic_plugin_get_type())
 
 G_DECLARE_FINAL_TYPE(CosmicPlugin, cosmic_plugin, COSMIC, PLUGIN, MetaPlugin)
@@ -47,4 +31,3 @@ static void cosmic_plugin_class_init(CosmicPluginClass *klass) {
     plugin_class->switch_workspace = cosmic_plugin_switch_workspace;
     plugin_class->unminimize = cosmic_plugin_unminimize;
 }
-/* } GObject boilerplate */

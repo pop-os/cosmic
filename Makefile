@@ -48,16 +48,18 @@ vendor:
 	tar pcfJ vendor.tar.xz vendor
 	rm -rf vendor
 
-target/c/wrapper.o: src/wrapper.c
-	mkdir -p target/c
-	$(CC) -c $^ -o $@ -Werror \
-		-Wl,-rpath /usr/lib/x86_64-linux-gnu/mutter-8 \
+target/wrapper/wrapper.h: src/wrapper.rs
+	mkdir -p target/wrapper
+	cbindgen --config cbindgen.toml --output $@ $<
+
+target/wrapper/wrapper.o: src/wrapper.c target/wrapper/wrapper.h
+	$(CC) -c $< -o $@ -Itarget/wrapper -Werror \
 		$(shell pkg-config --cflags --libs libmutter-8)
 
-target/c/libwrapper.a: target/c/wrapper.o
+target/wrapper/libwrapper.a: target/wrapper/wrapper.o
 	ar -rc $@ $^
 
-target/$(TARGET)/$(BIN): $(SRC) target/c/libwrapper.a
+target/$(TARGET)/$(BIN): $(SRC) target/wrapper/libwrapper.a
 ifeq ($(VENDORED),1)
 	tar pxf vendor.tar.xz
 endif
