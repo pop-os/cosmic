@@ -60,17 +60,16 @@ use meta_sys::{
     meta_plugin_switch_workspace_completed,
     meta_plugin_unminimize_completed,
     meta_window_actor_get_meta_window,
-    meta_window_focus,
-    meta_window_get_frame_rect,
-    meta_window_get_title,
-    meta_window_move_resize_frame,
     meta_workspace_manager_get_active_workspace,
 };
 use std::{
     ptr
 };
 
-use crate::c_str;
+use crate::{
+    c_str,
+    meta::Window,
+};
 
 #[link(name = "wrapper", kind = "static")]
 extern "C" {
@@ -78,11 +77,11 @@ extern "C" {
 }
 
 unsafe extern "C" fn on_toggle_overview(
-    display: *mut MetaDisplay,
-    window: *mut MetaWindow,
-    key_event: *mut ClutterKeyEvent,
-    key_binding: *mut MetaKeyBinding,
-    data: gpointer
+    _display: *mut MetaDisplay,
+    _window: *mut MetaWindow,
+    _key_event: *mut ClutterKeyEvent,
+    _key_binding: *mut MetaKeyBinding,
+    _data: gpointer
 ) {
     println!("on_toggle_overview");
 }
@@ -106,15 +105,14 @@ unsafe fn focus_direction(display: *mut MetaDisplay, direction: Direction) {
         let (mut current_left, mut current_right, mut current_top, mut current_bottom) = (0, 0, 0, 0);
         let mut first = true;
         while ! windows.is_null() {
-            let window = (*windows).data as *mut MetaWindow;
+            let window_opt = Window::from_ptr((*windows).data as *mut MetaWindow);
             windows = (*windows).next;
-            if window.is_null() {
-                continue;
-            }
+            let window = match window_opt {
+                Some(some) => some,
+                None => continue,
+            };
 
-            let mut rect = MetaRectangle { x: 0, y: 0, width: 0, height: 0 };
-            meta_window_get_frame_rect(window, &mut rect);
-
+            let rect = window.get_frame_rect();
             let (window_left, window_right, window_top, window_bottom) = (
                 rect.x,
                 rect.x + rect.width,
@@ -210,18 +208,18 @@ unsafe fn focus_direction(display: *mut MetaDisplay, direction: Direction) {
         g_list_free(windows);
     }
 
-    if let Some(window) = closest {
+    if let Some(mut window) = closest {
         let timestamp = meta_display_get_current_time(display);
-        meta_window_focus(window, timestamp);
+        window.focus(timestamp);
     }
 }
 
 unsafe extern "C" fn on_focus_left(
     display: *mut MetaDisplay,
-    window: *mut MetaWindow,
-    key_event: *mut ClutterKeyEvent,
-    key_binding: *mut MetaKeyBinding,
-    data: gpointer
+    _window: *mut MetaWindow,
+    _key_event: *mut ClutterKeyEvent,
+    _key_binding: *mut MetaKeyBinding,
+    _data: gpointer
 ) {
     println!("on_focus_left");
     focus_direction(display, Direction::Left);
@@ -229,10 +227,10 @@ unsafe extern "C" fn on_focus_left(
 
 unsafe extern "C" fn on_focus_right(
     display: *mut MetaDisplay,
-    window: *mut MetaWindow,
-    key_event: *mut ClutterKeyEvent,
-    key_binding: *mut MetaKeyBinding,
-    data: gpointer
+    _window: *mut MetaWindow,
+    _key_event: *mut ClutterKeyEvent,
+    _key_binding: *mut MetaKeyBinding,
+    _data: gpointer
 ) {
     println!("on_focus_right");
     focus_direction(display, Direction::Right);
@@ -240,10 +238,10 @@ unsafe extern "C" fn on_focus_right(
 
 unsafe extern "C" fn on_focus_up(
     display: *mut MetaDisplay,
-    window: *mut MetaWindow,
-    key_event: *mut ClutterKeyEvent,
-    key_binding: *mut MetaKeyBinding,
-    data: gpointer
+    _window: *mut MetaWindow,
+    _key_event: *mut ClutterKeyEvent,
+    _key_binding: *mut MetaKeyBinding,
+    _data: gpointer
 ) {
     println!("on_focus_up");
     focus_direction(display, Direction::Up);
@@ -251,38 +249,59 @@ unsafe extern "C" fn on_focus_up(
 
 unsafe extern "C" fn on_focus_down(
     display: *mut MetaDisplay,
-    window: *mut MetaWindow,
-    key_event: *mut ClutterKeyEvent,
-    key_binding: *mut MetaKeyBinding,
-    data: gpointer
+    _window: *mut MetaWindow,
+    _key_event: *mut ClutterKeyEvent,
+    _key_binding: *mut MetaKeyBinding,
+    _data: gpointer
 ) {
     println!("on_focus_down");
     focus_direction(display, Direction::Down);
 }
 
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_confirm_display_change(plugin: *mut MetaPlugin) {
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_confirm_display_change(plugin: *mut MetaPlugin) {
     meta_plugin_complete_display_change(plugin, GTRUE);
 }
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_destroy(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_destroy(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
     meta_plugin_destroy_completed(plugin, actor);
 }
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_hide_tile_preview(plugin: *mut MetaPlugin) {}
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_info(plugin: *mut MetaPlugin) -> *const MetaPluginInfo {
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_hide_tile_preview(plugin: *mut MetaPlugin) {}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_info(plugin: *mut MetaPlugin) -> *const MetaPluginInfo {
     ptr::null_mut()
 }
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_kill_switch_workspace(plugin: *mut MetaPlugin) {}
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_kill_window_effects(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_map(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_kill_switch_workspace(plugin: *mut MetaPlugin) {}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_kill_window_effects(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_map(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
     let window = meta_window_actor_get_meta_window(actor);
     //meta_window_move_resize_frame(window, GTRUE, 0, 0, 1920, 1080);
     meta_plugin_map_completed(plugin, actor);
 }
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_minimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_minimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
     meta_plugin_minimize_completed(plugin, actor);
 }
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_show_tile_preview(plugin: *mut MetaPlugin, window: *mut MetaWindow, tile_rect: *mut MetaRectangle, tile_monitor_number: c_int) {}
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_show_tile_preview(plugin: *mut MetaPlugin, window: *mut MetaWindow, tile_rect: *mut MetaRectangle, tile_monitor_number: c_int) {}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     println!("STARTING COSMIC PLUGIN");
 
     let display = meta_plugin_get_display(plugin);

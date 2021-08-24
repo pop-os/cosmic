@@ -6,6 +6,7 @@ use std::{
     ptr,
 };
 
+pub mod meta;
 pub mod wrapper;
 
 #[macro_export]
