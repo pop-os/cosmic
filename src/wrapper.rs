@@ -17,7 +17,6 @@ use gio_sys::{
 };
 use glib_sys::{
     GTRUE,
-    g_list_free,
     gpointer,
 };
 use gobject_sys::{
@@ -46,10 +45,8 @@ use meta_sys::{
     meta_background_set_color,
     meta_background_set_file,
     meta_display_add_keybinding,
-    meta_display_get_current_time,
     meta_display_get_monitor_geometry,
     meta_display_get_n_monitors,
-    meta_display_get_tab_list,
     meta_get_stage_for_display,
     meta_get_window_group_for_display,
     meta_plugin_complete_display_change,
@@ -132,118 +129,131 @@ fn focus_direction(display: &mut Display, direction: Direction) {
         }
     };
 
+    let mut current_window = match display.get_tab_current(META_TAB_LIST_NORMAL_ALL, &mut workspace) {
+        Some(some) => some,
+        None => return,
+    };
+    let current_rect = current_window.get_frame_rect();
+    let (current_left, current_right, current_top, current_bottom) = (
+        current_rect.x,
+        current_rect.x + current_rect.width,
+        current_rect.y,
+        current_rect.y + current_rect.height,
+    );
+    let current_window_ptr = unsafe { current_window.as_ptr() };
+
     let mut closest_dist = 0;
     let mut closest = None;
-    {
-        let mut windows = unsafe {
-            meta_display_get_tab_list(display.as_ptr(), META_TAB_LIST_NORMAL_ALL, workspace.as_ptr())
+    let mut window_iter = unsafe { Window::from_ptr(current_window_ptr).unwrap() };
+    loop {
+        let mut window = match display.get_tab_next(
+            META_TAB_LIST_NORMAL_ALL,
+            &mut workspace,
+            &mut window_iter,
+            false
+        ) {
+            Some(some) => some,
+            None => break,
         };
-        let (mut current_left, mut current_right, mut current_top, mut current_bottom) = (0, 0, 0, 0);
-        let mut first = true;
-        while ! windows.is_null() {
-            let window_opt = unsafe {
-                Window::from_ptr((*windows).data as *mut MetaWindow)
-            };
-            windows = unsafe { (*windows).next };
-            let window = match window_opt {
-                Some(some) => some,
-                None => continue,
-            };
 
-            let rect = window.get_frame_rect();
-            let (window_left, window_right, window_top, window_bottom) = (
-                rect.x,
-                rect.x + rect.width,
-                rect.y,
-                rect.y + rect.height,
+        window_iter = unsafe {
+            let window_ptr = window.as_ptr();
+            if window_ptr == current_window_ptr { break; }
+            Window::from_ptr(window_ptr).unwrap()
+        };
+
+        unsafe {
+            println!(
+                "{:?}",
+                std::ffi::CStr::from_ptr(
+                    meta_sys::meta_window_get_title(window.as_ptr())
+                )
             );
-
-            if first {
-                current_left = window_left;
-                current_right = window_right;
-                current_top = window_top;
-                current_bottom = window_bottom;
-                first = false;
-                continue;
-            }
-
-            // Window is not intersecting vertically
-            let out_of_bounds_vertical = || {
-                window_top >= current_bottom || window_bottom <= current_top
-            };
-            // Window is not intersecting horizontally
-            let out_of_bounds_horizontal = || {
-                window_left >= current_right || window_right <= current_left
-            };
-
-            // The distance must be that of the shortest straight line that can be
-            // drawn from the current window, in the specified direction, to the window
-            // we are evaluating.
-            let dist = match direction {
-                Direction::Left => {
-                    if out_of_bounds_vertical() { continue; }
-                    if window_right <= current_left {
-                        // To the left, with space
-                        current_left - window_right
-                    } else if window_left <= current_left {
-                        // To the left, overlapping
-                        0
-                    } else {
-                        // Not to the left, skipping
-                        continue;
-                    }
-                },
-                Direction::Right => {
-                    if out_of_bounds_vertical() { continue; }
-                    if window_left >= current_right {
-                        // To the right, with space
-                        window_left - current_right
-                    } else if window_right >= current_right {
-                        // To the right, overlapping
-                        0
-                    } else {
-                        // Not to the right, skipping
-                        continue;
-                    }
-                },
-                Direction::Up => {
-                    if out_of_bounds_horizontal() { continue; }
-                    if window_bottom <= current_top {
-                        // To the top, with space
-                        current_top - window_bottom
-                    } else if window_top <= current_top {
-                        // To the top, overlapping
-                        0
-                    } else {
-                        // Not to the top, skipping
-                        continue;
-                    }
-                },
-                Direction::Down => {
-                    if out_of_bounds_horizontal() { continue; }
-                    if window_top >= current_bottom {
-                        // To the bottom, with space
-                        window_top - current_bottom
-                    } else if window_bottom >= current_bottom {
-                        // To the bottom, overlapping
-                        0
-                    } else {
-                        // Not to the bottom, skipping
-                        continue;
-                    }
-                },
-            };
-
-            // Distance in wrong direction, skip
-            if dist < 0 { continue; }
-
-            // Save if closer than closest distance
-            if dist < closest_dist || closest.is_none() {
-                closest_dist = dist;
-                closest = Some(window);
-            }
         }
-        unsafe { g_list_free(windows); }
+
+        let rect = window.get_frame_rect();
+        let (window_left, window_right, window_top, window_bottom) = (
+            rect.x,
+            rect.x + rect.width,
+            rect.y,
+            rect.y + rect.height,
+        );
+
+        // Window is not intersecting vertically
+        let out_of_bounds_vertical = || {
+            window_top >= current_bottom || window_bottom <= current_top
+        };
+        // Window is not intersecting horizontally
+        let out_of_bounds_horizontal = || {
+            window_left >= current_right || window_right <= current_left
+        };
+
+        // The distance must be that of the shortest straight line that can be
+        // drawn from the current window, in the specified direction, to the window
+        // we are evaluating.
+        let dist = match direction {
+            Direction::Left => {
+                if out_of_bounds_vertical() { continue; }
+                if window_right <= current_left {
+                    // To the left, with space
+                    current_left - window_right
+                } else if window_left <= current_left {
+                    // To the left, overlapping
+                    0
+                } else {
+                    // Not to the left, skipping
+                    continue;
+                }
+            },
+            Direction::Right => {
+                if out_of_bounds_vertical() { continue; }
+                if window_left >= current_right {
+                    // To the right, with space
+                    window_left - current_right
+                } else if window_right >= current_right {
+                    // To the right, overlapping
+                    0
+                } else {
+                    // Not to the right, skipping
+                    continue;
+                }
+            },
+            Direction::Up => {
+                if out_of_bounds_horizontal() { continue; }
+                if window_bottom <= current_top {
+                    // To the top, with space
+                    current_top - window_bottom
+                } else if window_top <= current_top {
+                    // To the top, overlapping
+                    0
+                } else {
+                    // Not to the top, skipping
+                    continue;
+                }
+            },
+            Direction::Down => {
+                if out_of_bounds_horizontal() { continue; }
+                if window_top >= current_bottom {
+                    // To the bottom, with space
+                    window_top - current_bottom
+                } else if window_bottom >= current_bottom {
+                    // To the bottom, overlapping
+                    0
+                } else {
+                    // Not to the bottom, skipping
+                    continue;
+                }
+            },
+        };
+
+        // Distance in wrong direction, skip
+        if dist < 0 { continue; }
+
+        // Save if closer than closest distance
+        if dist < closest_dist || closest.is_none() {
+            closest_dist = dist;
+            closest = Some(window);
+        }
     }
 
     if let Some(mut window) = closest {

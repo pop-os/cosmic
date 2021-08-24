@@ -50,6 +50,7 @@ vendor:
 
 target/wrapper/wrapper.h: src/wrapper.rs
 	mkdir -p target/wrapper
+	rustc -Z parse-only $<
 	cbindgen --config cbindgen.toml --output $@ $<
 
 target/wrapper/wrapper.o: src/wrapper.c target/wrapper/wrapper.h
