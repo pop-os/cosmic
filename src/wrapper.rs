@@ -1,4 +1,5 @@
 use clutter_sys::{
+    CLUTTER_CURRENT_TIME,
     ClutterColor,
     ClutterKeyEvent,
     clutter_actor_add_child,
@@ -7,6 +8,7 @@ use clutter_sys::{
     clutter_actor_set_position,
     clutter_actor_set_size,
     clutter_actor_show,
+    clutter_get_current_event_time,
 };
 use gdesktop_enums_sys::{
     G_DESKTOP_BACKGROUND_STYLE_ZOOM,
@@ -23,7 +25,10 @@ use gobject_sys::{
     g_type_check_instance_cast,
 };
 use libc::c_int;
-use log::error;
+use log::{
+    error,
+    info,
+};
 use meta_sys::{
     META_KEY_BINDING_NONE,
     MetaBackgroundContent,
@@ -99,7 +104,7 @@ unsafe extern "C" fn on_toggle_overview(
     _key_binding: *mut MetaKeyBinding,
     _data: gpointer
 ) {
-    println!("on_toggle_overview");
+    info!("on_toggle_overview");
 }
 
 enum Direction {
@@ -107,6 +112,14 @@ enum Direction {
     Right,
     Up,
     Down,
+}
+
+fn current_time(display: &Display) -> u32 {
+    let time = display.current_time();
+    if time != CLUTTER_CURRENT_TIME as u32 {
+        return time;
+    }
+    unsafe { clutter_get_current_event_time() }
 }
 
 fn focus_direction(display: &mut Display, direction: Direction) {
@@ -236,7 +249,7 @@ fn focus_direction(display: &mut Display, direction: Direction) {
     }
 
     if let Some(window) = closest {
-        window.focus(display.current_time());
+        window.focus(current_time(display));
     }
 }
 
@@ -305,7 +318,7 @@ pub unsafe extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, act
 
 #[no_mangle]
 pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
-    println!("STARTING COSMIC PLUGIN");
+    info!("STARTING COSMIC PLUGIN");
 
     let plugin = Plugin::from_glib_none(plugin);
 
@@ -345,6 +358,10 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     }
 
     clutter_actor_show(meta_get_stage_for_display(display.to_glib_none().0));
+
+    display.connect_overlay_key(|_display| {
+        info!("overlay key");
+    });
 
     let settings = gio::Settings::new("org.gnome.shell.keybindings");
     meta_display_add_keybinding(
