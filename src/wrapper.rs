@@ -62,7 +62,6 @@ use meta::{
     Display,
     Plugin,
     TabList,
-    Window,
     traits::PluginExt,
 };
 use std::{
@@ -122,7 +121,7 @@ fn current_time(display: &Display) -> u32 {
     unsafe { clutter_get_current_event_time() }
 }
 
-fn focus_direction(display: &mut Display, direction: Direction) {
+fn focus_direction(display: &Display, direction: Direction) {
     let workspace_manager = match display.workspace_manager() {
         Some(some) => some,
         None => {
@@ -260,7 +259,7 @@ unsafe extern "C" fn on_focus_c(
     _key_binding: *mut MetaKeyBinding,
     data: gpointer
 ) {
-    let mut display = Display::from_glib_none(display);
+    let display = Display::from_glib_none(display);
     let direction = match data as usize {
         1 => Direction::Left,
         2 => Direction::Right,
@@ -271,7 +270,7 @@ unsafe extern "C" fn on_focus_c(
             return;
         }
     };
-    focus_direction(&mut display, direction);
+    focus_direction(&display, direction);
 }
 
 #[no_mangle]
