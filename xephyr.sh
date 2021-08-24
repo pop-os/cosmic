@@ -2,7 +2,7 @@
 
 set -ex
 
-cargo build --release
+make
 
 XEPHYR_DISPLAY=":2"
 

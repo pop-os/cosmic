@@ -9,11 +9,25 @@ G_DECLARE_FINAL_TYPE(CosmicPlugin, cosmic_plugin, COSMIC, PLUGIN, MetaPlugin)
 
 struct _CosmicPlugin {
   MetaPlugin parent;
+  CosmicPluginData * data;
 };
 
 G_DEFINE_TYPE(CosmicPlugin, cosmic_plugin, META_TYPE_PLUGIN)
 
-static void cosmic_plugin_init(CosmicPlugin *plugin) {}
+CosmicPluginData * cosmic_plugin_data(MetaPlugin *meta_plugin) {
+    CosmicPlugin * plugin = COSMIC_PLUGIN(meta_plugin);
+    if (plugin) {
+        return plugin->data;
+    } else {
+        return NULL;
+    }
+}
+
+static void cosmic_plugin_init(CosmicPlugin *plugin) {
+    plugin->data = cosmic_plugin_data_init();
+}
+
+//TODO: do we need cosmic_plugin_finalize or cosmic_plugin_dispose?
 
 static void cosmic_plugin_class_init(CosmicPluginClass *klass) {
     MetaPluginClass *plugin_class = META_PLUGIN_CLASS(klass);

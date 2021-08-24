@@ -25,6 +25,7 @@ use gobject_sys::{
     g_type_check_instance_cast,
 };
 use libc::c_int;
+use log::error;
 use meta_sys::{
     META_KEY_BINDING_NONE,
     META_TAB_LIST_NORMAL_ALL,
@@ -49,7 +50,6 @@ use meta_sys::{
     meta_display_get_monitor_geometry,
     meta_display_get_n_monitors,
     meta_display_get_tab_list,
-    meta_display_get_workspace_manager,
     meta_get_stage_for_display,
     meta_get_window_group_for_display,
     meta_plugin_complete_display_change,
@@ -60,7 +60,6 @@ use meta_sys::{
     meta_plugin_switch_workspace_completed,
     meta_plugin_unminimize_completed,
     meta_window_actor_get_meta_window,
-    meta_workspace_manager_get_active_workspace,
 };
 use std::{
     ptr
@@ -68,12 +67,36 @@ use std::{
 
 use crate::{
     c_str,
-    meta::Window,
+    meta::{
+        Display,
+        Window,
+    },
 };
+
+#[repr(C)]
+pub struct CosmicPluginData;
+
+impl CosmicPluginData {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_data_init() -> *mut CosmicPluginData {
+    Box::into_raw(Box::new(CosmicPluginData::new()))
+}
+
+//TODO: will this ever be used?
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_data_free(data: *mut CosmicPluginData) {
+    drop(Box::from_raw(data));
+}
 
 #[link(name = "wrapper", kind = "static")]
 extern "C" {
     pub fn cosmic_plugin_get_type() -> glib_sys::GType;
+    pub fn cosmic_plugin_data(plugin: *mut MetaPlugin) -> *mut CosmicPluginData;
 }
 
 unsafe extern "C" fn on_toggle_overview(
@@ -93,20 +116,35 @@ enum Direction {
     Down,
 }
 
-unsafe fn focus_direction(display: *mut MetaDisplay, direction: Direction) {
-    let workspace_manager = meta_display_get_workspace_manager(display);
-    let workspace = meta_workspace_manager_get_active_workspace(workspace_manager);
+fn focus_direction(display: &mut Display, direction: Direction) {
+    let mut workspace_manager = match display.get_workspace_manager() {
+        Some(some) => some,
+        None => {
+            error!("failed to get workspace manager");
+            return;
+        }
+    };
+    let mut workspace = match workspace_manager.get_active_workspace() {
+        Some(some) => some,
+        None => {
+            error!("failed to get active workspace");
+            return;
+        }
+    };
 
     let mut closest_dist = 0;
     let mut closest = None;
-
     {
-        let mut windows = meta_display_get_tab_list(display, META_TAB_LIST_NORMAL_ALL, workspace);
+        let mut windows = unsafe {
+            meta_display_get_tab_list(display.as_ptr(), META_TAB_LIST_NORMAL_ALL, workspace.as_ptr())
+        };
         let (mut current_left, mut current_right, mut current_top, mut current_bottom) = (0, 0, 0, 0);
         let mut first = true;
         while ! windows.is_null() {
-            let window_opt = Window::from_ptr((*windows).data as *mut MetaWindow);
-            windows = (*windows).next;
+            let window_opt = unsafe {
+                Window::from_ptr((*windows).data as *mut MetaWindow)
+            };
+            windows = unsafe { (*windows).next };
             let window = match window_opt {
                 Some(some) => some,
                 None => continue,
@@ -205,57 +243,39 @@ unsafe fn focus_direction(display: *mut MetaDisplay, direction: Direction) {
                 closest = Some(window);
             }
         }
-        g_list_free(windows);
+        unsafe { g_list_free(windows); }
     }
 
     if let Some(mut window) = closest {
-        let timestamp = meta_display_get_current_time(display);
-        window.focus(timestamp);
+        window.focus(display.get_current_time());
     }
 }
 
-unsafe extern "C" fn on_focus_left(
+unsafe extern "C" fn on_focus_c(
     display: *mut MetaDisplay,
     _window: *mut MetaWindow,
     _key_event: *mut ClutterKeyEvent,
     _key_binding: *mut MetaKeyBinding,
-    _data: gpointer
+    data: gpointer
 ) {
-    println!("on_focus_left");
-    focus_direction(display, Direction::Left);
-}
-
-unsafe extern "C" fn on_focus_right(
-    display: *mut MetaDisplay,
-    _window: *mut MetaWindow,
-    _key_event: *mut ClutterKeyEvent,
-    _key_binding: *mut MetaKeyBinding,
-    _data: gpointer
-) {
-    println!("on_focus_right");
-    focus_direction(display, Direction::Right);
-}
-
-unsafe extern "C" fn on_focus_up(
-    display: *mut MetaDisplay,
-    _window: *mut MetaWindow,
-    _key_event: *mut ClutterKeyEvent,
-    _key_binding: *mut MetaKeyBinding,
-    _data: gpointer
-) {
-    println!("on_focus_up");
-    focus_direction(display, Direction::Up);
-}
-
-unsafe extern "C" fn on_focus_down(
-    display: *mut MetaDisplay,
-    _window: *mut MetaWindow,
-    _key_event: *mut ClutterKeyEvent,
-    _key_binding: *mut MetaKeyBinding,
-    _data: gpointer
-) {
-    println!("on_focus_down");
-    focus_direction(display, Direction::Down);
+    let mut display = match Display::from_ptr(display) {
+        Some(some) => some,
+        None => {
+            error!("no display found");
+            return;
+        },
+    };
+    let direction = match data as usize {
+        1 => Direction::Left,
+        2 => Direction::Right,
+        3 => Direction::Up,
+        4 => Direction::Down,
+        other => {
+            error!("unknown direction {}", other);
+            return;
+        }
+    };
+    focus_direction(&mut display, direction);
 }
 
 #[no_mangle]
@@ -360,8 +380,8 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         c_str!("focus-left"),
         settings,
         META_KEY_BINDING_NONE,
-        Some(on_focus_left),
-        ptr::null_mut(),
+        Some(on_focus_c),
+        1 as *mut _,
         None,
     );
     meta_display_add_keybinding(
@@ -369,8 +389,8 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         c_str!("focus-right"),
         settings,
         META_KEY_BINDING_NONE,
-        Some(on_focus_right),
-        ptr::null_mut(),
+        Some(on_focus_c),
+        2 as *mut _,
         None,
     );
     meta_display_add_keybinding(
@@ -378,8 +398,8 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         c_str!("focus-up"),
         settings,
         META_KEY_BINDING_NONE,
-        Some(on_focus_up),
-        ptr::null_mut(),
+        Some(on_focus_c),
+        3 as *mut _,
         None,
     );
     meta_display_add_keybinding(
@@ -387,16 +407,20 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         c_str!("focus-down"),
         settings,
         META_KEY_BINDING_NONE,
-        Some(on_focus_down),
-        ptr::null_mut(),
+        Some(on_focus_c),
+        4 as *mut _,
         None,
     );
 
     //TODO: dispose of settings?
 }
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_switch_workspace(plugin: *mut MetaPlugin, from: c_int, to: c_int, direction: MetaMotionDirection) {
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_switch_workspace(plugin: *mut MetaPlugin, from: c_int, to: c_int, direction: MetaMotionDirection) {
     meta_plugin_switch_workspace_completed(plugin);
 }
-#[no_mangle] pub unsafe extern "C" fn cosmic_plugin_unminimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmic_plugin_unminimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
     meta_plugin_unminimize_completed(plugin, actor);
 }
