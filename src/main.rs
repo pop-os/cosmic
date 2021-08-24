@@ -8,6 +8,13 @@ use std::{
 
 pub mod wrapper;
 
+#[macro_export]
+macro_rules! c_str {
+    ($str:expr) => {
+        concat!($str, "\0").as_ptr() as *const libc::c_char
+    }
+}
+
 fn main() {
     unsafe {
         // Nasty stuff to convert to C arguments
@@ -28,7 +35,7 @@ fn main() {
             &mut error
         ) == glib_sys::GFALSE {
             glib_sys::g_printerr(
-                b"%s: %s\n\0".as_ptr() as _,
+                c_str!("%s: %s\n"),
                 args[0],
                 (*error).message
             );
@@ -38,7 +45,7 @@ fn main() {
 
         // Run mutter
         meta_sys::meta_plugin_manager_set_plugin_type(wrapper::cosmic_plugin_get_type());
-        meta_sys::meta_set_wm_name(b"COSMIC\0".as_ptr() as _);
+        meta_sys::meta_set_wm_name(c_str!("COSMIC"));
         meta_sys::meta_init();
         meta_sys::meta_register_with_session();
         process::exit(meta_sys::meta_run());

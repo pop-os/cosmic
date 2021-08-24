@@ -67,9 +67,10 @@ use meta_sys::{
     meta_workspace_manager_get_active_workspace,
 };
 use std::{
-    ffi::CStr,
     ptr
 };
+
+use crate::c_str;
 
 #[link(name = "wrapper", kind = "static")]
 extern "C" {
@@ -297,7 +298,7 @@ unsafe extern "C" fn on_focus_down(
     };
 
     let background_file = g_file_new_for_path(
-        b"/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png\0".as_ptr() as _
+        c_str!("/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png")
     );
 
     for i in 0..meta_display_get_n_monitors(display) {
@@ -322,10 +323,10 @@ unsafe extern "C" fn on_focus_down(
 
     clutter_actor_show(meta_get_stage_for_display(display));
 
-    let settings = g_settings_new(b"org.gnome.shell.keybindings\0".as_ptr() as _);
+    let settings = g_settings_new(c_str!("org.gnome.shell.keybindings"));
     meta_display_add_keybinding(
         display,
-        b"toggle-overview\0".as_ptr() as _,
+        c_str!("toggle-overview"),
         settings,
         META_KEY_BINDING_NONE,
         Some(on_toggle_overview),
@@ -334,10 +335,10 @@ unsafe extern "C" fn on_focus_down(
     );
     //TODO: dispose of settings?
 
-    let settings = g_settings_new(b"org.gnome.shell.extensions.pop-shell\0".as_ptr() as _);
+    let settings = g_settings_new(c_str!("org.gnome.shell.extensions.pop-shell"));
     meta_display_add_keybinding(
         display,
-        b"focus-left\0".as_ptr() as _,
+        c_str!("focus-left"),
         settings,
         META_KEY_BINDING_NONE,
         Some(on_focus_left),
@@ -346,7 +347,7 @@ unsafe extern "C" fn on_focus_down(
     );
     meta_display_add_keybinding(
         display,
-        b"focus-right\0".as_ptr() as _,
+        c_str!("focus-right"),
         settings,
         META_KEY_BINDING_NONE,
         Some(on_focus_right),
@@ -355,7 +356,7 @@ unsafe extern "C" fn on_focus_down(
     );
     meta_display_add_keybinding(
         display,
-        b"focus-up\0".as_ptr() as _,
+        c_str!("focus-up"),
         settings,
         META_KEY_BINDING_NONE,
         Some(on_focus_up),
@@ -364,7 +365,7 @@ unsafe extern "C" fn on_focus_down(
     );
     meta_display_add_keybinding(
         display,
-        b"focus-down\0".as_ptr() as _,
+        c_str!("focus-down"),
         settings,
         META_KEY_BINDING_NONE,
         Some(on_focus_down),
