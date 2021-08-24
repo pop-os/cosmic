@@ -18,6 +18,9 @@ features = ["v1_10"]
 [dependencies.gdesktop_enums-sys]
 git = "https://github.com/pop-os/mutter-rs"
 
+[dependencies.gio]
+git = "https://github.com/gtk-rs/gtk-rs-core"
+
 [dependencies.gio-sys]
 git = "https://github.com/gtk-rs/gtk-rs-core"
 

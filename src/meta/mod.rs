@@ -1,6 +1,9 @@
 pub use self::display::Display;
 mod display;
 
+pub use self::plugin::Plugin;
+mod plugin;
+
 pub use self::window::Window;
 mod window;
 

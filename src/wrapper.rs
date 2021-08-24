@@ -11,9 +11,8 @@ use clutter_sys::{
 use gdesktop_enums_sys::{
     G_DESKTOP_BACKGROUND_STYLE_ZOOM,
 };
-use gio_sys::{
-    g_file_new_for_path,
-    g_settings_new,
+use glib::{
+    translate::ToGlibPtr,
 };
 use glib_sys::{
     GTRUE,
@@ -66,6 +65,7 @@ use crate::{
     c_str,
     meta::{
         Display,
+        Plugin,
         Window,
     },
 };
@@ -334,10 +334,12 @@ pub unsafe extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, act
 pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     println!("STARTING COSMIC PLUGIN");
 
-    let display = meta_plugin_get_display(plugin);
+    let mut plugin = Plugin::from_ptr(plugin).expect("no plugin found");
+
+    let mut display = plugin.get_display().expect("no display found");
 
     let background_group = meta_background_group_new();
-    clutter_actor_insert_child_below(meta_get_window_group_for_display(display), background_group, ptr::null_mut());
+    clutter_actor_insert_child_below(meta_get_window_group_for_display(display.as_ptr()), background_group, ptr::null_mut());
 
     let mut color = ClutterColor {
         red: 128,
@@ -346,83 +348,79 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         alpha: 255,
     };
 
-    let background_file = g_file_new_for_path(
-        c_str!("/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png")
+    let background_file = gio::File::for_path(
+        "/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png"
     );
 
-    for i in 0..meta_display_get_n_monitors(display) {
-        let mut rect = MetaRectangle { x: 0, y: 0, width: 0, height: 0 };
-        meta_display_get_monitor_geometry(display, i, &mut rect);
+    for monitor in 0..display.get_n_monitors() {
+        let rect = display.get_monitor_geometry(monitor);
 
-        let background_actor = meta_background_actor_new(display, i);
+        let background_actor = meta_background_actor_new(display.as_ptr(), monitor);
         let content = clutter_actor_get_content(background_actor);
         let background_content = g_type_check_instance_cast(content as *mut _, meta_background_content_get_type()) as *mut MetaBackgroundContent;
 
         clutter_actor_set_position(background_actor, rect.x as f32, rect.y as f32);
         clutter_actor_set_size(background_actor, rect.width as f32, rect.height as f32);
 
-        let background = meta_background_new(display);
+        let background = meta_background_new(display.as_ptr());
         meta_background_set_color(background, &mut color);
-        meta_background_set_file(background, background_file, G_DESKTOP_BACKGROUND_STYLE_ZOOM);
+        meta_background_set_file(background, background_file.to_glib_none().0, G_DESKTOP_BACKGROUND_STYLE_ZOOM);
         meta_background_content_set_background(background_content, background);
         g_object_unref(background as *mut _);
 
         clutter_actor_add_child(background_group, background_actor);
     }
 
-    clutter_actor_show(meta_get_stage_for_display(display));
+    clutter_actor_show(meta_get_stage_for_display(display.as_ptr()));
 
-    let settings = g_settings_new(c_str!("org.gnome.shell.keybindings"));
+    let settings = gio::Settings::new("org.gnome.shell.keybindings");
     meta_display_add_keybinding(
-        display,
+        display.as_ptr(),
         c_str!("toggle-overview"),
-        settings,
+        settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
         Some(on_toggle_overview),
         ptr::null_mut(),
         None,
     );
-    //TODO: dispose of settings?
 
-    let settings = g_settings_new(c_str!("org.gnome.shell.extensions.pop-shell"));
+    let settings = gio::Settings::new("org.gnome.shell.extensions.pop-shell");
     meta_display_add_keybinding(
-        display,
+        display.as_ptr(),
         c_str!("focus-left"),
-        settings,
+        settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
         Some(on_focus_c),
         1 as *mut _,
         None,
     );
     meta_display_add_keybinding(
-        display,
+        display.as_ptr(),
         c_str!("focus-right"),
-        settings,
+        settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
         Some(on_focus_c),
         2 as *mut _,
         None,
     );
     meta_display_add_keybinding(
-        display,
+        display.as_ptr(),
         c_str!("focus-up"),
-        settings,
+        settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
         Some(on_focus_c),
         3 as *mut _,
         None,
     );
     meta_display_add_keybinding(
-        display,
+        display.as_ptr(),
         c_str!("focus-down"),
-        settings,
+        settings.to_glib_none().0,
         META_KEY_BINDING_NONE,
         Some(on_focus_c),
         4 as *mut _,
         None,
     );
-
-    //TODO: dispose of settings?
 }
 
 #[no_mangle]

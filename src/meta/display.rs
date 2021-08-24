@@ -4,8 +4,11 @@ use glib_sys::{
 };
 use meta_sys::{
     MetaDisplay,
+    MetaRectangle,
     MetaTabList,
     meta_display_get_current_time,
+    meta_display_get_monitor_geometry,
+    meta_display_get_n_monitors,
     meta_display_get_tab_current,
     meta_display_get_tab_next,
     meta_display_get_workspace_manager,
@@ -39,6 +42,21 @@ impl Display {
 
     pub fn get_current_time(&mut self) -> u32 {
         unsafe { meta_display_get_current_time(self.0) }
+    }
+
+    pub fn get_monitor_geometry(&mut self, monitor: libc::c_int) -> MetaRectangle {
+        let mut rect = MetaRectangle {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0
+        };
+        unsafe { meta_display_get_monitor_geometry(self.0, monitor, &mut rect); }
+        rect
+    }
+
+    pub fn get_n_monitors(&mut self) -> libc::c_int {
+        unsafe { meta_display_get_n_monitors(self.0) }
     }
 
     pub fn get_tab_current(

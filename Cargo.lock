@@ -169,6 +169,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "futures-io"
+version = "0.3.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b0e06c393068f3a6ef246c75cdca793d6a46347e75286933e5e75fd2fd11582"
+
+[[package]]
 name = "futures-task"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -224,6 +230,22 @@ dependencies = [
  "pango-sys",
  "pkg-config",
  "system-deps",
+]
+
+[[package]]
+name = "gio"
+version = "0.15.0"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#db041297159cab441865c7cb82b7ea8205141ace"
+dependencies = [
+ "bitflags",
+ "futures-channel",
+ "futures-core",
+ "futures-io",
+ "gio-sys",
+ "glib",
+ "libc",
+ "once_cell",
+ "thiserror",
 ]
 
 [[package]]
@@ -446,6 +468,7 @@ dependencies = [
  "clutter-sys",
  "env_logger",
  "gdesktop_enums-sys",
+ "gio",
  "gio-sys",
  "glib",
  "glib-sys",
