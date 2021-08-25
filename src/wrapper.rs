@@ -176,13 +176,9 @@ pub extern "C" fn cosmic_plugin_info(_plugin: *mut MetaPlugin) -> *const MetaPlu
 pub extern "C" fn cosmic_plugin_keybinding_filter(plugin: *mut MetaPlugin, key_binding: *mut MetaKeyBinding) -> gboolean {
     let plugin = unsafe { Plugin::from_glib_none(plugin) };
     let key_binding = unsafe { KeyBinding::from_glib_none(key_binding) };
-    if with_cosmic(&plugin, |cosmic| {
+    with_cosmic(&plugin, |cosmic| {
         cosmic.keybinding_filter(&plugin, &key_binding)
-    }).unwrap_or(false) {
-        GTRUE
-    } else {
-        GFALSE
-    }
+    }).unwrap_or(false).into_glib()
 }
 
 #[no_mangle]
