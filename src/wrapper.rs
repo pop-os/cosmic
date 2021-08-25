@@ -273,18 +273,18 @@ pub extern "C" fn cosmic_plugin_destroy(plugin: *mut MetaPlugin, actor: *mut Met
 }
 
 #[no_mangle]
-pub extern "C" fn cosmic_plugin_hide_tile_preview(plugin: *mut MetaPlugin) {}
+pub extern "C" fn cosmic_plugin_hide_tile_preview(_plugin: *mut MetaPlugin) {}
 
 #[no_mangle]
-pub extern "C" fn cosmic_plugin_info(plugin: *mut MetaPlugin) -> *const MetaPluginInfo {
+pub extern "C" fn cosmic_plugin_info(_plugin: *mut MetaPlugin) -> *const MetaPluginInfo {
     ptr::null_mut()
 }
 
 #[no_mangle]
-pub extern "C" fn cosmic_plugin_kill_switch_workspace(plugin: *mut MetaPlugin) {}
+pub extern "C" fn cosmic_plugin_kill_switch_workspace(_plugin: *mut MetaPlugin) {}
 
 #[no_mangle]
-pub extern "C" fn cosmic_plugin_kill_window_effects(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
+pub extern "C" fn cosmic_plugin_kill_window_effects(_plugin: *mut MetaPlugin, _actor: *mut MetaWindowActor) {}
 
 #[no_mangle]
 pub extern "C" fn cosmic_plugin_map(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
@@ -301,10 +301,10 @@ pub extern "C" fn cosmic_plugin_minimize(plugin: *mut MetaPlugin, actor: *mut Me
 }
 
 #[no_mangle]
-pub extern "C" fn cosmic_plugin_show_tile_preview(plugin: *mut MetaPlugin, window: *mut MetaWindow, tile_rect: *mut MetaRectangle, tile_monitor_number: c_int) {}
+pub extern "C" fn cosmic_plugin_show_tile_preview(_plugin: *mut MetaPlugin, _window: *mut MetaWindow, _tile_rect: *mut MetaRectangle, _tile_monitor_number: c_int) {}
 
 #[no_mangle]
-pub extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
+pub extern "C" fn cosmic_plugin_size_changed(_plugin: *mut MetaPlugin, _actor: *mut MetaWindowActor) {}
 
 #[no_mangle]
 pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
@@ -409,7 +409,7 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
 }
 
 #[no_mangle]
-pub extern "C" fn cosmic_plugin_switch_workspace(plugin: *mut MetaPlugin, from: c_int, to: c_int, direction: MetaMotionDirection) {
+pub extern "C" fn cosmic_plugin_switch_workspace(plugin: *mut MetaPlugin, _from: c_int, _to: c_int, _direction: MetaMotionDirection) {
     let plugin = unsafe { Plugin::from_glib_none(plugin) };
     plugin.switch_workspace_completed();
 }
