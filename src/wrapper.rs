@@ -6,8 +6,6 @@ use clutter::{
 use clutter_sys::{
     CLUTTER_CURRENT_TIME,
     ClutterKeyEvent,
-    clutter_actor_insert_child_below,
-    clutter_actor_show,
     clutter_get_current_event_time,
 };
 use gdesktop_enums::{
@@ -47,8 +45,6 @@ use meta_sys::{
     MetaWindow,
     MetaWindowActor,
     meta_display_add_keybinding,
-    meta_get_stage_for_display,
-    meta_get_window_group_for_display,
 };
 use std::{
     ptr
@@ -312,16 +308,12 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
 
     let plugin = unsafe { Plugin::from_glib_none(plugin) };
 
-    let display = plugin.display().expect("no display found");
+    let display = plugin.display().expect("failed to find plugin display");
 
     let background_group = BackgroundGroup::new();
-    unsafe {
-        clutter_actor_insert_child_below(
-            meta_get_window_group_for_display(display.to_glib_none().0),
-            background_group.upcast_ref::<Actor>().to_glib_none().0,
-            ptr::null_mut()
-        );
-    }
+    meta::functions::window_group_for_display(&display)
+        .expect("failed to find display window group")
+        .insert_child_below::<_, Actor>(&background_group, None);
 
     let mut color = Color::new(128, 128, 128, 255);
 
@@ -348,7 +340,9 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         background_group.add_child(&background_actor);
     }
 
-    unsafe { clutter_actor_show(meta_get_stage_for_display(display.to_glib_none().0)); }
+    meta::functions::stage_for_display(&display)
+        .expect("failed to find display stage")
+        .show();
 
     display.connect_overlay_key(|_display| {
         info!("overlay key");
