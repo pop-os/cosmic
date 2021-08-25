@@ -1,29 +1,24 @@
 use clutter::{
     Actor,
-    traits::ActorExt,
+    ActorExt,
+    Color,
 };
 use clutter_sys::{
     CLUTTER_CURRENT_TIME,
-    ClutterColor,
     ClutterKeyEvent,
-    clutter_actor_add_child,
     clutter_actor_insert_child_below,
     clutter_actor_show,
     clutter_get_current_event_time,
 };
-use gdesktop_enums_sys::{
-    G_DESKTOP_BACKGROUND_STYLE_ZOOM,
+use gdesktop_enums::{
+    BackgroundStyle,
 };
 use glib::{
     Cast,
     translate::{FromGlibPtrNone, ToGlibPtr},
 };
 use glib_sys::{
-    GTRUE,
     gpointer,
-};
-use gobject_sys::{
-    g_object_unref,
 };
 use libc::c_int;
 use log::{
@@ -31,12 +26,15 @@ use log::{
     info,
 };
 use meta::{
+    Background,
     BackgroundActor,
     BackgroundContent,
+    BackgroundGroup,
     Display,
     Plugin,
+    PluginExt,
     TabList,
-    traits::PluginExt,
+    WindowActor,
 };
 use meta_sys::{
     META_KEY_BINDING_NONE,
@@ -48,21 +46,9 @@ use meta_sys::{
     MetaRectangle,
     MetaWindow,
     MetaWindowActor,
-    meta_background_content_set_background,
-    meta_background_group_new,
-    meta_background_new,
-    meta_background_set_color,
-    meta_background_set_file,
     meta_display_add_keybinding,
     meta_get_stage_for_display,
     meta_get_window_group_for_display,
-    meta_plugin_complete_display_change,
-    meta_plugin_destroy_completed,
-    meta_plugin_map_completed,
-    meta_plugin_minimize_completed,
-    meta_plugin_switch_workspace_completed,
-    meta_plugin_unminimize_completed,
-    meta_window_actor_get_meta_window,
 };
 use std::{
     ptr
@@ -96,7 +82,7 @@ extern "C" {
     pub fn cosmic_plugin_data(plugin: *mut MetaPlugin) -> *mut CosmicPluginData;
 }
 
-unsafe extern "C" fn on_toggle_overview(
+extern "C" fn on_toggle_overview(
     _display: *mut MetaDisplay,
     _window: *mut MetaWindow,
     _key_event: *mut ClutterKeyEvent,
@@ -252,14 +238,14 @@ fn focus_direction(display: &Display, direction: Direction) {
     }
 }
 
-unsafe extern "C" fn on_focus_c(
+extern "C" fn on_focus_c(
     display: *mut MetaDisplay,
     _window: *mut MetaWindow,
     _key_event: *mut ClutterKeyEvent,
     _key_binding: *mut MetaKeyBinding,
     data: gpointer
 ) {
-    let display = Display::from_glib_none(display);
+    let display = unsafe { Display::from_glib_none(display) };
     let direction = match data as usize {
         1 => Direction::Left,
         2 => Direction::Right,
@@ -274,64 +260,70 @@ unsafe extern "C" fn on_focus_c(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_confirm_display_change(plugin: *mut MetaPlugin) {
-    meta_plugin_complete_display_change(plugin, GTRUE);
+pub extern "C" fn cosmic_plugin_confirm_display_change(plugin: *mut MetaPlugin) {
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
+    plugin.complete_display_change(true);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_destroy(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
-    meta_plugin_destroy_completed(plugin, actor);
+pub extern "C" fn cosmic_plugin_destroy(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
+    let actor = unsafe { WindowActor::from_glib_none(actor) };
+    plugin.destroy_completed(&actor);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_hide_tile_preview(plugin: *mut MetaPlugin) {}
+pub extern "C" fn cosmic_plugin_hide_tile_preview(plugin: *mut MetaPlugin) {}
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_info(plugin: *mut MetaPlugin) -> *const MetaPluginInfo {
+pub extern "C" fn cosmic_plugin_info(plugin: *mut MetaPlugin) -> *const MetaPluginInfo {
     ptr::null_mut()
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_kill_switch_workspace(plugin: *mut MetaPlugin) {}
+pub extern "C" fn cosmic_plugin_kill_switch_workspace(plugin: *mut MetaPlugin) {}
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_kill_window_effects(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
+pub extern "C" fn cosmic_plugin_kill_window_effects(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_map(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
-    let window = meta_window_actor_get_meta_window(actor);
-    //meta_window_move_resize_frame(window, GTRUE, 0, 0, 1920, 1080);
-    meta_plugin_map_completed(plugin, actor);
+pub extern "C" fn cosmic_plugin_map(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
+    let actor = unsafe { WindowActor::from_glib_none(actor) };
+    plugin.map_completed(&actor);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_minimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
-    meta_plugin_minimize_completed(plugin, actor);
+pub extern "C" fn cosmic_plugin_minimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
+    let actor = unsafe { WindowActor::from_glib_none(actor) };
+    plugin.minimize_completed(&actor);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_show_tile_preview(plugin: *mut MetaPlugin, window: *mut MetaWindow, tile_rect: *mut MetaRectangle, tile_monitor_number: c_int) {}
+pub extern "C" fn cosmic_plugin_show_tile_preview(plugin: *mut MetaPlugin, window: *mut MetaWindow, tile_rect: *mut MetaRectangle, tile_monitor_number: c_int) {}
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
+pub extern "C" fn cosmic_plugin_size_changed(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {}
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
+pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     info!("STARTING COSMIC PLUGIN");
 
-    let plugin = Plugin::from_glib_none(plugin);
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
 
     let display = plugin.display().expect("no display found");
 
-    let background_group = meta_background_group_new();
-    clutter_actor_insert_child_below(meta_get_window_group_for_display(display.to_glib_none().0), background_group, ptr::null_mut());
+    let background_group = BackgroundGroup::new();
+    unsafe {
+        clutter_actor_insert_child_below(
+            meta_get_window_group_for_display(display.to_glib_none().0),
+            background_group.upcast_ref::<Actor>().to_glib_none().0,
+            ptr::null_mut()
+        );
+    }
 
-    let mut color = ClutterColor {
-        red: 128,
-        green: 128,
-        blue: 128,
-        alpha: 255,
-    };
+    let mut color = Color::new(128, 128, 128, 255);
 
     let background_file = gio::File::for_path(
         "/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png"
@@ -348,77 +340,83 @@ pub unsafe extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         background_actor.set_position(rect.x() as f32, rect.y() as f32);
         background_actor.set_size(rect.width() as f32, rect.height() as f32);
 
-        let background = meta_background_new(display.to_glib_none().0);
-        meta_background_set_color(background, &mut color);
-        meta_background_set_file(background, background_file.to_glib_none().0, G_DESKTOP_BACKGROUND_STYLE_ZOOM);
-        meta_background_content_set_background(background_content.to_glib_none().0, background);
-        g_object_unref(background as *mut _);
+        let background = Background::new(&display);
+        background.set_color(&mut color);
+        background.set_file(Some(&background_file), BackgroundStyle::Zoom);
+        background_content.set_background(&background);
 
-        clutter_actor_add_child(background_group, background_actor.upcast::<Actor>().to_glib_none().0);
+        background_group.add_child(&background_actor);
     }
 
-    clutter_actor_show(meta_get_stage_for_display(display.to_glib_none().0));
+    unsafe { clutter_actor_show(meta_get_stage_for_display(display.to_glib_none().0)); }
 
     display.connect_overlay_key(|_display| {
         info!("overlay key");
     });
 
     let settings = gio::Settings::new("org.gnome.shell.keybindings");
-    meta_display_add_keybinding(
-        display.to_glib_none().0,
-        c_str!("toggle-overview"),
-        settings.to_glib_none().0,
-        META_KEY_BINDING_NONE,
-        Some(on_toggle_overview),
-        ptr::null_mut(),
-        None,
-    );
+    unsafe {
+        meta_display_add_keybinding(
+            display.to_glib_none().0,
+            c_str!("toggle-overview"),
+            settings.to_glib_none().0,
+            META_KEY_BINDING_NONE,
+            Some(on_toggle_overview),
+            ptr::null_mut(),
+            None,
+        );
+    }
 
     let settings = gio::Settings::new("org.gnome.shell.extensions.pop-shell");
-    meta_display_add_keybinding(
-        display.to_glib_none().0,
-        c_str!("focus-left"),
-        settings.to_glib_none().0,
-        META_KEY_BINDING_NONE,
-        Some(on_focus_c),
-        1 as *mut _,
-        None,
-    );
-    meta_display_add_keybinding(
-        display.to_glib_none().0,
-        c_str!("focus-right"),
-        settings.to_glib_none().0,
-        META_KEY_BINDING_NONE,
-        Some(on_focus_c),
-        2 as *mut _,
-        None,
-    );
-    meta_display_add_keybinding(
-        display.to_glib_none().0,
-        c_str!("focus-up"),
-        settings.to_glib_none().0,
-        META_KEY_BINDING_NONE,
-        Some(on_focus_c),
-        3 as *mut _,
-        None,
-    );
-    meta_display_add_keybinding(
-        display.to_glib_none().0,
-        c_str!("focus-down"),
-        settings.to_glib_none().0,
-        META_KEY_BINDING_NONE,
-        Some(on_focus_c),
-        4 as *mut _,
-        None,
-    );
+    unsafe {
+        meta_display_add_keybinding(
+            display.to_glib_none().0,
+            c_str!("focus-left"),
+            settings.to_glib_none().0,
+            META_KEY_BINDING_NONE,
+            Some(on_focus_c),
+            1 as *mut _,
+            None,
+        );
+        meta_display_add_keybinding(
+            display.to_glib_none().0,
+            c_str!("focus-right"),
+            settings.to_glib_none().0,
+            META_KEY_BINDING_NONE,
+            Some(on_focus_c),
+            2 as *mut _,
+            None,
+        );
+        meta_display_add_keybinding(
+            display.to_glib_none().0,
+            c_str!("focus-up"),
+            settings.to_glib_none().0,
+            META_KEY_BINDING_NONE,
+            Some(on_focus_c),
+            3 as *mut _,
+            None,
+        );
+        meta_display_add_keybinding(
+            display.to_glib_none().0,
+            c_str!("focus-down"),
+            settings.to_glib_none().0,
+            META_KEY_BINDING_NONE,
+            Some(on_focus_c),
+            4 as *mut _,
+            None,
+        );
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_switch_workspace(plugin: *mut MetaPlugin, from: c_int, to: c_int, direction: MetaMotionDirection) {
-    meta_plugin_switch_workspace_completed(plugin);
+pub extern "C" fn cosmic_plugin_switch_workspace(plugin: *mut MetaPlugin, from: c_int, to: c_int, direction: MetaMotionDirection) {
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
+    plugin.switch_workspace_completed();
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cosmic_plugin_unminimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
-    meta_plugin_unminimize_completed(plugin, actor);
+pub extern "C" fn cosmic_plugin_unminimize(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
+    let actor = unsafe { WindowActor::from_glib_none(actor) };
+    plugin.unminimize_completed(&actor);
 }

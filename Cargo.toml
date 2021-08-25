@@ -11,7 +11,6 @@ env_logger = "0.9.0"
 gio = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 glib = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 glib-sys = { git = "https://github.com/gtk-rs/gtk-rs-core" }
-gobject-sys = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 libc = "0.2.100"
 log = "0.4.14"
 
@@ -23,8 +22,8 @@ features = ["v1_10"]
 path = "mutter-rs/clutter-sys"
 features = ["v1_10"]
 
-[dependencies.gdesktop_enums-sys]
-path = "mutter-rs/gdesktop_enums-sys"
+[dependencies.gdesktop_enums]
+path = "mutter-rs/gdesktop_enums"
 
 [dependencies.meta]
 path = "mutter-rs/meta"
