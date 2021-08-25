@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=pop-cosmic-panel
+NoDisplay=true
+Comment=Pop COSMIC Panel
+Exec=pop-cosmic-panel

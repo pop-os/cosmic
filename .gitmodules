@@ -2,3 +2,7 @@
 	path = mutter-rs
 	url = https://github.com/pop-os/mutter-rs.git
 	branch = main
+[submodule "panel"]
+	path = panel
+	url = https://github.com/pop-os/cosmic-panel.git
+	branch = master

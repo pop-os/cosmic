@@ -34,6 +34,7 @@ static void cosmic_plugin_class_init(CosmicPluginClass *klass) {
     plugin_class->confirm_display_change = cosmic_plugin_confirm_display_change;
     plugin_class->destroy = cosmic_plugin_destroy;
     plugin_class->hide_tile_preview = cosmic_plugin_hide_tile_preview;
+    plugin_class->keybinding_filter = cosmic_plugin_keybinding_filter;
     plugin_class->kill_switch_workspace = cosmic_plugin_kill_switch_workspace;
     plugin_class->kill_window_effects = cosmic_plugin_kill_window_effects;
     plugin_class->map = cosmic_plugin_map;

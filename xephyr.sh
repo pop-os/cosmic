@@ -14,6 +14,6 @@ export DISPLAY="${XEPHYR_DISPLAY}"
 target/release/pop-cosmic &
 
 sleep 1
-xterm &
+panel/target/release/pop-cosmic-panel &
 
 wait "${XEPHYR_PID}"

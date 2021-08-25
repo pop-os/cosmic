@@ -4,19 +4,27 @@ use clutter::{
     Color,
 };
 use clutter_sys::{
-    CLUTTER_CURRENT_TIME,
     ClutterKeyEvent,
-    clutter_get_current_event_time,
 };
 use gdesktop_enums::{
     BackgroundStyle,
 };
+use gio::{
+    Settings,
+};
 use glib::{
     Cast,
-    translate::{FromGlibPtrNone, ToGlibPtr},
+    translate::{
+        FromGlibPtrNone,
+        IntoGlib,
+        ToGlibPtr,
+    },
 };
 use glib_sys::{
+    gboolean,
     gpointer,
+    GFALSE,
+    GTRUE,
 };
 use libc::c_int;
 use log::{
@@ -29,13 +37,13 @@ use meta::{
     BackgroundContent,
     BackgroundGroup,
     Display,
+    KeyBinding,
+    KeyBindingFlags,
     Plugin,
     PluginExt,
-    TabList,
     WindowActor,
 };
 use meta_sys::{
-    META_KEY_BINDING_NONE,
     MetaDisplay,
     MetaKeyBinding,
     MetaMotionDirection,
@@ -47,17 +55,29 @@ use meta_sys::{
     meta_display_add_keybinding,
 };
 use std::{
-    ptr
+    ptr,
 };
 
-use crate::c_str;
+use crate::{Cosmic, Direction};
 
-#[repr(C)]
-pub struct CosmicPluginData;
+// Not #[repr(C)], so it is exported opaque
+pub struct CosmicPluginData(Cosmic);
 
 impl CosmicPluginData {
-    pub fn new() -> Self {
-        Self
+    fn new() -> Self {
+        Self(Cosmic::new())
+    }
+
+    //TODO: is this safe?
+    fn from_plugin<'a>(plugin: &'a Plugin) -> Option<&'a Self> {
+        unsafe {
+            let ptr = cosmic_plugin_data(plugin.to_glib_none().0);
+            if ! ptr.is_null() {
+                Some(&*ptr)
+            } else {
+                None
+            }
+        }
     }
 }
 
@@ -78,181 +98,57 @@ extern "C" {
     pub fn cosmic_plugin_data(plugin: *mut MetaPlugin) -> *mut CosmicPluginData;
 }
 
-extern "C" fn on_toggle_overview(
-    _display: *mut MetaDisplay,
-    _window: *mut MetaWindow,
-    _key_event: *mut ClutterKeyEvent,
-    _key_binding: *mut MetaKeyBinding,
-    _data: gpointer
-) {
-    info!("on_toggle_overview");
-}
-
-enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-}
-
-fn current_time(display: &Display) -> u32 {
-    let time = display.current_time();
-    if time != CLUTTER_CURRENT_TIME as u32 {
-        return time;
-    }
-    unsafe { clutter_get_current_event_time() }
-}
-
-fn focus_direction(display: &Display, direction: Direction) {
-    let workspace_manager = match display.workspace_manager() {
-        Some(some) => some,
+fn with_cosmic<T, F: Fn(&Cosmic) -> T>(plugin: &Plugin, f: F) -> Option<T> {
+    match CosmicPluginData::from_plugin(plugin) {
+        Some(data) => Some(f(&data.0)),
         None => {
-            error!("failed to get workspace manager");
-            return;
-        }
-    };
-    let workspace = match workspace_manager.active_workspace() {
-        Some(some) => some,
-        None => {
-            error!("failed to get active workspace");
-            return;
-        }
-    };
-
-    let current_window = match display.tab_current(TabList::NormalAll, &workspace) {
-        Some(some) => some,
-        None => return,
-    };
-    let current_rect = current_window.frame_rect();
-    let (current_left, current_right, current_top, current_bottom) = (
-        current_rect.x(),
-        current_rect.x() + current_rect.width(),
-        current_rect.y(),
-        current_rect.y() + current_rect.height(),
-    );
-
-    let mut closest_dist = 0;
-    let mut closest = None;
-    let mut window = current_window.clone();
-    loop {
-        match display.tab_next(TabList::NormalAll, &workspace, Some(&window), false) {
-            Some(some) => window = some,
-            None => break,
-        }
-
-        if window.id() == current_window.id() {
-            break;
-        }
-
-        let rect = window.frame_rect();
-        let (window_left, window_right, window_top, window_bottom) = (
-            rect.x(),
-            rect.x() + rect.width(),
-            rect.y(),
-            rect.y() + rect.height(),
-        );
-
-        // Window is not intersecting vertically
-        let out_of_bounds_vertical = || {
-            window_top >= current_bottom || window_bottom <= current_top
-        };
-        // Window is not intersecting horizontally
-        let out_of_bounds_horizontal = || {
-            window_left >= current_right || window_right <= current_left
-        };
-
-        // The distance must be that of the shortest straight line that can be
-        // drawn from the current window, in the specified direction, to the window
-        // we are evaluating.
-        let dist = match direction {
-            Direction::Left => {
-                if out_of_bounds_vertical() { continue; }
-                if window_right <= current_left {
-                    // To the left, with space
-                    current_left - window_right
-                } else if window_left <= current_left {
-                    // To the left, overlapping
-                    0
-                } else {
-                    // Not to the left, skipping
-                    continue;
-                }
-            },
-            Direction::Right => {
-                if out_of_bounds_vertical() { continue; }
-                if window_left >= current_right {
-                    // To the right, with space
-                    window_left - current_right
-                } else if window_right >= current_right {
-                    // To the right, overlapping
-                    0
-                } else {
-                    // Not to the right, skipping
-                    continue;
-                }
-            },
-            Direction::Up => {
-                if out_of_bounds_horizontal() { continue; }
-                if window_bottom <= current_top {
-                    // To the top, with space
-                    current_top - window_bottom
-                } else if window_top <= current_top {
-                    // To the top, overlapping
-                    0
-                } else {
-                    // Not to the top, skipping
-                    continue;
-                }
-            },
-            Direction::Down => {
-                if out_of_bounds_horizontal() { continue; }
-                if window_top >= current_bottom {
-                    // To the bottom, with space
-                    window_top - current_bottom
-                } else if window_bottom >= current_bottom {
-                    // To the bottom, overlapping
-                    0
-                } else {
-                    // Not to the bottom, skipping
-                    continue;
-                }
-            },
-        };
-
-        // Distance in wrong direction, skip
-        if dist < 0 { continue; }
-
-        // Save if closer than closest distance
-        if dist < closest_dist || closest.is_none() {
-            closest_dist = dist;
-            closest = Some(window.clone());
-        }
-    }
-
-    if let Some(window) = closest {
-        window.focus(current_time(display));
+            error!("failed to get cosmic plugin data");
+            None
+        },
     }
 }
 
-extern "C" fn on_focus_c(
+type AddKeybindingFn = Box<dyn Fn(&Display)>;
+
+unsafe extern "C" fn add_keybinding_handler(
     display: *mut MetaDisplay,
     _window: *mut MetaWindow,
     _key_event: *mut ClutterKeyEvent,
     _key_binding: *mut MetaKeyBinding,
     data: gpointer
 ) {
-    let display = unsafe { Display::from_glib_none(display) };
-    let direction = match data as usize {
-        1 => Direction::Left,
-        2 => Direction::Right,
-        3 => Direction::Up,
-        4 => Direction::Down,
-        other => {
-            error!("unknown direction {}", other);
-            return;
-        }
-    };
-    focus_direction(&display, direction);
+    let display = Display::from_glib_none(display);
+    let handler_ptr = data as *mut AddKeybindingFn;
+    let handler = &*handler_ptr;
+    handler(&display);
+}
+
+unsafe extern "C" fn add_keybinding_destroy_notify(data: gpointer) {
+    let handler_ptr = data as *mut AddKeybindingFn;
+    drop(Box::from_raw(handler_ptr));
+}
+
+fn add_keybinding(
+    display: &Display,
+    name: &str,
+    settings: &Settings,
+    flags: KeyBindingFlags,
+    handler: impl Fn(&Display) + 'static
+) {
+    unsafe {
+        // Double boxed to avoid weird pointer size issues with dyn Fn
+        let handler_box: AddKeybindingFn = Box::new(handler);
+        let handler_ptr: *mut AddKeybindingFn = Box::into_raw(Box::new(handler_box));
+        meta_display_add_keybinding(
+            display.to_glib_none().0,
+            name.to_glib_none().0,
+            settings.to_glib_none().0,
+            flags.into_glib(),
+            Some(add_keybinding_handler),
+            handler_ptr as gpointer,
+            Some(add_keybinding_destroy_notify)
+        );
+    }
 }
 
 #[no_mangle]
@@ -274,6 +170,19 @@ pub extern "C" fn cosmic_plugin_hide_tile_preview(_plugin: *mut MetaPlugin) {}
 #[no_mangle]
 pub extern "C" fn cosmic_plugin_info(_plugin: *mut MetaPlugin) -> *const MetaPluginInfo {
     ptr::null_mut()
+}
+
+#[no_mangle]
+pub extern "C" fn cosmic_plugin_keybinding_filter(plugin: *mut MetaPlugin, key_binding: *mut MetaKeyBinding) -> gboolean {
+    let plugin = unsafe { Plugin::from_glib_none(plugin) };
+    let key_binding = unsafe { KeyBinding::from_glib_none(key_binding) };
+    if with_cosmic(&plugin, |cosmic| {
+        cosmic.keybinding_filter(&plugin, &key_binding)
+    }).unwrap_or(false) {
+        GTRUE
+    } else {
+        GFALSE
+    }
 }
 
 #[no_mangle]
@@ -344,61 +253,48 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         .expect("failed to find display stage")
         .show();
 
-    display.connect_overlay_key(|_display| {
-        info!("overlay key");
-    });
-
-    let settings = gio::Settings::new("org.gnome.shell.keybindings");
-    unsafe {
-        meta_display_add_keybinding(
-            display.to_glib_none().0,
-            c_str!("toggle-overview"),
-            settings.to_glib_none().0,
-            META_KEY_BINDING_NONE,
-            Some(on_toggle_overview),
-            ptr::null_mut(),
-            None,
-        );
+    {
+        let plugin = plugin.clone();
+        display.connect_overlay_key(move |display| {
+            info!("overlay key");
+            with_cosmic(&plugin, |cosmic| {
+                cosmic.toggle_launcher(&plugin, display);
+            });
+        });
     }
 
-    let settings = gio::Settings::new("org.gnome.shell.extensions.pop-shell");
-    unsafe {
-        meta_display_add_keybinding(
-            display.to_glib_none().0,
-            c_str!("focus-left"),
-            settings.to_glib_none().0,
-            META_KEY_BINDING_NONE,
-            Some(on_focus_c),
-            1 as *mut _,
-            None,
-        );
-        meta_display_add_keybinding(
-            display.to_glib_none().0,
-            c_str!("focus-right"),
-            settings.to_glib_none().0,
-            META_KEY_BINDING_NONE,
-            Some(on_focus_c),
-            2 as *mut _,
-            None,
-        );
-        meta_display_add_keybinding(
-            display.to_glib_none().0,
-            c_str!("focus-up"),
-            settings.to_glib_none().0,
-            META_KEY_BINDING_NONE,
-            Some(on_focus_c),
-            3 as *mut _,
-            None,
-        );
-        meta_display_add_keybinding(
-            display.to_glib_none().0,
-            c_str!("focus-down"),
-            settings.to_glib_none().0,
-            META_KEY_BINDING_NONE,
-            Some(on_focus_c),
-            4 as *mut _,
-            None,
-        );
+    let settings = Settings::new("org.gnome.shell.extensions.pop-shell");
+    {
+        let plugin = plugin.clone();
+        add_keybinding(&display, "focus-left", &settings, KeyBindingFlags::NONE, move |display| {
+            with_cosmic(&plugin, |cosmic| {
+                cosmic.focus_direction(display, Direction::Left);
+            });
+        });
+    }
+    {
+        let plugin = plugin.clone();
+        add_keybinding(&display, "focus-right", &settings, KeyBindingFlags::NONE, move |display| {
+            with_cosmic(&plugin, |cosmic| {
+                cosmic.focus_direction(display, Direction::Right);
+            });
+        });
+    }
+    {
+        let plugin = plugin.clone();
+        add_keybinding(&display, "focus-up", &settings, KeyBindingFlags::NONE, move |display| {
+            with_cosmic(&plugin, |cosmic| {
+                cosmic.focus_direction(display, Direction::Up);
+            });
+        });
+    }
+    {
+        let plugin = plugin.clone();
+        add_keybinding(&display, "focus-down", &settings, KeyBindingFlags::NONE, move |display| {
+            with_cosmic(&plugin, |cosmic| {
+                cosmic.focus_direction(display, Direction::Down);
+            });
+        });
     }
 }
 

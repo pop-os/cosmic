@@ -6,13 +6,23 @@ use std::{
     ptr,
 };
 
-pub mod wrapper;
+pub use crate::cosmic::Cosmic;
+mod cosmic;
+
+mod wrapper;
 
 #[macro_export]
 macro_rules! c_str {
     ($str:expr) => {
         concat!($str, "\0").as_ptr() as *const libc::c_char
     }
+}
+
+pub enum Direction {
+    Left,
+    Right,
+    Up,
+    Down,
 }
 
 pub fn run() {
