@@ -12,6 +12,7 @@ use meta::{
     Plugin,
     PluginExt,
     TabList,
+    WindowActor,
 };
 use std::{
     cell::RefCell,
@@ -165,13 +166,28 @@ impl Cosmic {
         }
 
         if let Some(window) = closest {
-            window.focus(Self::current_time(display));
+            window.activate(Self::current_time(display));
+            window.raise();
         }
     }
 
     pub fn keybinding_filter(&self, plugin: &Plugin, key_binding: &KeyBinding) -> bool {
         println!("{:?}", key_binding);
         false
+    }
+
+    pub fn map(&self, plugin: &Plugin, actor: &WindowActor) {
+        if let Some(window) = actor.meta_window() {
+            let display = match plugin.display() {
+                Some(some) => some,
+                None => {
+                    error!("failed to find plugin display");
+                    return;
+                },
+            };
+            window.activate(Self::current_time(&display));
+            window.raise();
+        }
     }
 
     pub fn toggle_launcher(&self, plugin: &Plugin, display: &Display) {

@@ -195,6 +195,9 @@ pub extern "C" fn cosmic_plugin_kill_window_effects(_plugin: *mut MetaPlugin, _a
 pub extern "C" fn cosmic_plugin_map(plugin: *mut MetaPlugin, actor: *mut MetaWindowActor) {
     let plugin = unsafe { Plugin::from_glib_none(plugin) };
     let actor = unsafe { WindowActor::from_glib_none(actor) };
+    with_cosmic(&plugin, |cosmic| {
+        cosmic.map(&plugin, &actor);
+    });
     plugin.map_completed(&actor);
 }
 
