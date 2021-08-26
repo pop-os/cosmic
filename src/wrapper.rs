@@ -10,7 +10,15 @@ use gdesktop_enums::{
     BackgroundStyle,
 };
 use gio::{
+    AppInfo,
+    AppLaunchContext,
     Settings,
+    Subprocess,
+    SubprocessFlags,
+    prelude::{
+        AppInfoExt,
+        SettingsExt,
+    },
 };
 use glib::{
     Cast,
@@ -52,9 +60,9 @@ use meta_sys::{
     MetaRectangle,
     MetaWindow,
     MetaWindowActor,
-    meta_display_add_keybinding,
 };
 use std::{
+    ffi::OsStr,
     ptr,
 };
 
@@ -98,56 +106,13 @@ extern "C" {
     pub fn cosmic_plugin_data(plugin: *mut MetaPlugin) -> *mut CosmicPluginData;
 }
 
-fn with_cosmic<T, F: Fn(&Cosmic) -> T>(plugin: &Plugin, f: F) -> Option<T> {
+fn with_cosmic<T, F: FnMut(&Cosmic) -> T>(plugin: &Plugin, mut f: F) -> Option<T> {
     match CosmicPluginData::from_plugin(plugin) {
         Some(data) => Some(f(&data.0)),
         None => {
             error!("failed to get cosmic plugin data");
             None
         },
-    }
-}
-
-type AddKeybindingFn = Box<dyn Fn(&Display)>;
-
-unsafe extern "C" fn add_keybinding_handler(
-    display: *mut MetaDisplay,
-    _window: *mut MetaWindow,
-    _key_event: *mut ClutterKeyEvent,
-    _key_binding: *mut MetaKeyBinding,
-    data: gpointer
-) {
-    let display = Display::from_glib_none(display);
-    let handler_ptr = data as *mut AddKeybindingFn;
-    let handler = &*handler_ptr;
-    handler(&display);
-}
-
-unsafe extern "C" fn add_keybinding_destroy_notify(data: gpointer) {
-    let handler_ptr = data as *mut AddKeybindingFn;
-    drop(Box::from_raw(handler_ptr));
-}
-
-fn add_keybinding(
-    display: &Display,
-    name: &str,
-    settings: &Settings,
-    flags: KeyBindingFlags,
-    handler: impl Fn(&Display) + 'static
-) {
-    unsafe {
-        // Double boxed to avoid weird pointer size issues with dyn Fn
-        let handler_box: AddKeybindingFn = Box::new(handler);
-        let handler_ptr: *mut AddKeybindingFn = Box::into_raw(Box::new(handler_box));
-        meta_display_add_keybinding(
-            display.to_glib_none().0,
-            name.to_glib_none().0,
-            settings.to_glib_none().0,
-            flags.into_glib(),
-            Some(add_keybinding_handler),
-            handler_ptr as gpointer,
-            Some(add_keybinding_destroy_notify)
-        );
     }
 }
 
@@ -175,9 +140,9 @@ pub extern "C" fn cosmic_plugin_info(_plugin: *mut MetaPlugin) -> *const MetaPlu
 #[no_mangle]
 pub extern "C" fn cosmic_plugin_keybinding_filter(plugin: *mut MetaPlugin, key_binding: *mut MetaKeyBinding) -> gboolean {
     let plugin = unsafe { Plugin::from_glib_none(plugin) };
-    let key_binding = unsafe { KeyBinding::from_glib_none(key_binding) };
+    let mut key_binding = unsafe { KeyBinding::from_glib_none(key_binding) };
     with_cosmic(&plugin, |cosmic| {
-        cosmic.keybinding_filter(&plugin, &key_binding)
+        cosmic.keybinding_filter(&plugin, &mut key_binding)
     }).unwrap_or(false).into_glib()
 }
 
@@ -262,10 +227,30 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
         });
     }
 
+    //TODO: make gnome-settings-daemon media-keys function on its own
+    let settings = Settings::new("org.gnome.settings-daemon.plugins.media-keys");
+    display.add_keybinding("terminal", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
+        let settings = Settings::new("org.gnome.desktop.default-applications.terminal");
+        let command = settings.string("exec");
+        //TODO: launch context, launch with AppInfo::create_from_commandline
+        match Subprocess::newv(&[OsStr::new(&command)], SubprocessFlags::NONE) {
+            Ok(_subprocess) => (),
+            Err(err) => {
+                error!("failed to launch terminal {:?}: {}", command, err);
+            }
+        }
+    });
+    display.add_keybinding("www", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
+        if let Some(app_info) = AppInfo::default_for_uri_scheme("http") {
+            //TODO: launch context?
+            app_info.launch::<AppLaunchContext>(&[], None);
+        }
+    });
+
     let settings = Settings::new("org.gnome.shell.extensions.pop-shell");
     {
         let plugin = plugin.clone();
-        add_keybinding(&display, "focus-left", &settings, KeyBindingFlags::NONE, move |display| {
+        display.add_keybinding("focus-left", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
             with_cosmic(&plugin, |cosmic| {
                 cosmic.focus_direction(display, Direction::Left);
             });
@@ -273,7 +258,7 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     }
     {
         let plugin = plugin.clone();
-        add_keybinding(&display, "focus-right", &settings, KeyBindingFlags::NONE, move |display| {
+        display.add_keybinding("focus-right", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
             with_cosmic(&plugin, |cosmic| {
                 cosmic.focus_direction(display, Direction::Right);
             });
@@ -281,7 +266,7 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     }
     {
         let plugin = plugin.clone();
-        add_keybinding(&display, "focus-up", &settings, KeyBindingFlags::NONE, move |display| {
+        display.add_keybinding("focus-up", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
             with_cosmic(&plugin, |cosmic| {
                 cosmic.focus_direction(display, Direction::Up);
             });
@@ -289,7 +274,7 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     }
     {
         let plugin = plugin.clone();
-        add_keybinding(&display, "focus-down", &settings, KeyBindingFlags::NONE, move |display| {
+        display.add_keybinding("focus-down", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
             with_cosmic(&plugin, |cosmic| {
                 cosmic.focus_direction(display, Direction::Down);
             });

@@ -4,7 +4,10 @@ use clutter::{
     Color,
     Text,
 };
-use log::error;
+use log::{
+    error,
+    info,
+};
 use meta::{
     Display,
     KeyBinding,
@@ -171,8 +174,8 @@ impl Cosmic {
         }
     }
 
-    pub fn keybinding_filter(&self, plugin: &Plugin, key_binding: &KeyBinding) -> bool {
-        println!("{:?}", key_binding);
+    pub fn keybinding_filter(&self, plugin: &Plugin, key_binding: &mut KeyBinding) -> bool {
+        info!("key_binding {:?} builtin {}", key_binding.name(), key_binding.is_builtin());
         false
     }
 
