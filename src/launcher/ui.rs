@@ -8,6 +8,13 @@ use clutter::{
 use evdev::{
     Key,
 };
+use gio::{
+    AppLaunchContext,
+    DesktopAppInfo,
+    prelude::{
+        AppInfoExt,
+    },
+};
 use log::{
     error,
     info,
@@ -176,13 +183,29 @@ impl LauncherUi {
             let plugin = plugin.clone();
             let display = display.clone();
             let this = ret.clone();
-            ret.entry.actor.connect_activate(move |entry_actor| {
+            ret.entry.actor.connect_activate(move |_entry_actor| {
                 with_cosmic(&plugin, |cosmic| {
                     let selected = this.selected.get();
                     info!("activate {}", selected);
-                    info!("response: {:#?}", cosmic.launcher_request(
+                    let response_res = cosmic.launcher_request(
                         Request::Activate(selected as pop_launcher::Indice)
-                    ));
+                    );
+                    info!("response: {:#?}", response_res);
+                    if let Ok(Response::DesktopEntry { path, .. }) = response_res {
+                        //TODO: gpu_preference
+                        match DesktopAppInfo::from_filename(&path) {
+                            Some(app_info) => {
+                                //TODO: launch context?
+                                match app_info.launch::<AppLaunchContext>(&[], None) {
+                                    Ok(_) => (),
+                                    Err(err) => {
+                                        error!("failed to launch entry {:?}: {}", path, err);
+                                    },
+                                }
+                            },
+                            None => error!("failed to load entry {:?}", path),
+                        }
+                    }
 
                     // Close launcher on enter
                     cosmic.toggle_launcher(&plugin, &display);
@@ -195,12 +218,28 @@ impl LauncherUi {
             let plugin = plugin.clone();
             let display = display.clone();
             let this = ret.clone();
-            ret.entry.actor.connect_key_press_event(move |_entry_actor, key_event| {
+            ret.entry.actor.connect_key_press_event(move |entry_actor, key_event| {
                 match Key::new(key_event.evdev_code as u16) {
                     Key::KEY_ESC => {
                         // Close launcher on escape
                         with_cosmic(&plugin, |cosmic| {
                             cosmic.toggle_launcher(&plugin, &display);
+                        });
+                        true
+                    },
+                    Key::KEY_TAB => {
+                        with_cosmic(&plugin, |cosmic| {
+                            let selected = this.selected.get();
+                            info!("complete {}", selected);
+                            let response_res = cosmic.launcher_request(
+                                Request::Complete(selected as pop_launcher::Indice)
+                            );
+                            info!("response: {:#?}", response_res);
+                            if let Ok(Response::Fill(text)) = response_res {
+                                this.selected.set(0);
+                                // Automatically runs search again
+                                entry_actor.set_text(Some(&text));
+                            }
                         });
                         true
                     },
@@ -224,7 +263,6 @@ impl LauncherUi {
             ret.entry.actor.connect_text_changed(move |entry_actor| {
                 with_cosmic(&plugin, |cosmic| {
                     this.clear();
-
                     if let Some(text) = entry_actor.text() {
                         info!("search {}", text);
                         let response_res = cosmic.launcher_request(
