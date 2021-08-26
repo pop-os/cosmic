@@ -2,8 +2,6 @@ use clutter::{
     Actor,
     ActorExt,
     Color,
-    Text,
-    TextExt,
 };
 use gdesktop_enums::{
     BackgroundStyle,
@@ -28,25 +26,41 @@ use meta::{
     TabList,
     WindowActor,
 };
+use pop_launcher::{
+    Request,
+    Response,
+};
 use std::{
     cell::RefCell,
+    io,
+    rc::Rc,
 };
 
 use crate::{
     Direction,
-    wrapper::with_cosmic,
+    LauncherIpc,
+    LauncherUi,
 };
 
 pub struct Cosmic {
     background_group: BackgroundGroup,
-    launcher_actor: RefCell<Option<Actor>>,
+    launcher_ipc: RefCell<Option<LauncherIpc>>,
+    launcher_ui: RefCell<Option<Rc<LauncherUi>>>,
 }
 
 impl Cosmic {
     pub fn new() -> Self {
+        let launcher_ipc = match LauncherIpc::new() {
+            Ok(ok) => Some(ok),
+            Err(err) => {
+                error!("failed to create LauncherIpc: {}", err);
+                None
+            }
+        };
         Self {
             background_group: BackgroundGroup::new(),
-            launcher_actor: RefCell::new(None),
+            launcher_ipc: RefCell::new(launcher_ipc),
+            launcher_ui: RefCell::new(None),
         }
     }
 
@@ -250,6 +264,13 @@ impl Cosmic {
             .show();
     }
 
+    pub fn launcher_request(&self, request: Request) -> io::Result<Response> {
+        match &mut *self.launcher_ipc.borrow_mut() {
+            Some(launcher_ipc) => launcher_ipc.request(request),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "launcher ipc not found")),
+        }
+    }
+
     pub fn toggle_launcher(&self, plugin: &Plugin, display: &Display) {
         let stage = match meta::functions::stage_for_display(&display) {
             Some(some) => some,
@@ -259,68 +280,15 @@ impl Cosmic {
             }
         };
 
-        if let Some(actor) = self.launcher_actor.replace(None) {
-            stage.remove_child(&actor);
+        if let Some(launcher_ui) = self.launcher_ui.replace(None) {
+            stage.remove_child(&launcher_ui.actor);
 
             plugin.end_modal(Self::current_time(display));
         } else {
             plugin.begin_modal(ModalOptions::empty(), Self::current_time(display));
 
-            let color_fg = Color::new(0xFF, 0xFF, 0xFF, 0xFF);
-            let color_sel = Color::new(0x00, 0x7F, 0xFF, 0xFF);
-            let color_bg = Color::new(0x20, 0x20, 0x20, 0xFF);
-
-            let (launcher_w, launcher_h) = (480.0, 48.0);
-            let (stage_w, stage_h) = stage.size();
-            let launcher_x = (stage_w - launcher_w) / 2.0;
-            let launcher_y = (stage_h - launcher_h) / 2.0;
-
-            let actor = Actor::new();
-            actor.set_position(launcher_x, launcher_y);
-            actor.set_size(launcher_w, launcher_h);
-            actor.set_background_color(Some(&color_bg));
-            stage.add_child(&actor);
-
-            let text_actor = Text::new_full("IBM Plex Mono 16", "", &color_fg);
-            ActorExt::set_position(&text_actor, 8.0, 8.0);
-            text_actor.set_activatable(true);
-            text_actor.set_cursor_visible(true);
-            text_actor.set_editable(true);
-            text_actor.set_reactive(true);
-            text_actor.set_selectable(true);
-            text_actor.set_selection_color(Some(&color_sel));
-            {
-                let plugin = plugin.clone();
-                let display = display.clone();
-                text_actor.connect_activate(move |text_actor| {
-                    info!("launcher: {:?}", text_actor.text());
-                    // Close launcher on enter
-                    with_cosmic(&plugin, |cosmic| {
-                        cosmic.toggle_launcher(&plugin, &display);
-                    });
-                });
-            }
-            {
-                let plugin = plugin.clone();
-                let display = display.clone();
-                text_actor.connect_key_press_event(move |_, key_event| {
-                    match char::from_u32(key_event.unicode_value) {
-                        Some('\u{1b}') => {
-                            // Close launcher on escape
-                            with_cosmic(&plugin, |cosmic| {
-                                cosmic.toggle_launcher(&plugin, &display);
-                            });
-                            true
-                        },
-                        _ => false
-                    }
-                });
-            }
-            actor.add_child(&text_actor);
-            text_actor.grab_key_focus();
-            //TODO: set clutter backend default input method so there are no errors
-
-            self.launcher_actor.replace(Some(actor));
+            let launcher_ui = LauncherUi::new(&stage, plugin, display);
+            self.launcher_ui.replace(Some(launcher_ui));
         }
     }
 }

@@ -6,8 +6,11 @@ use std::{
     ptr,
 };
 
-pub use crate::cosmic::Cosmic;
+pub use self::cosmic::Cosmic;
 mod cosmic;
+
+pub use self::launcher::{LauncherIpc, LauncherUi};
+mod launcher;
 
 mod wrapper;
 

@@ -8,11 +8,14 @@ cc = "1.0.69"
 
 [dependencies]
 env_logger = "0.9.0"
+evdev = "0.11.0"
 gio = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 glib = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 glib-sys = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 libc = "0.2.100"
 log = "0.4.14"
+pop-launcher = { git = "https://github.com/pop-os/launcher" }
+serde_json = { version = "1.0", default-features = false }
 
 [dependencies.clutter]
 path = "mutter-rs/clutter"

@@ -6,6 +6,7 @@ Build-Depends:
   cargo,
   cbindgen,
   debhelper (>= 10),
+  libgtk-4-dev,
   libmutter-8-dev,
 Standards-Version: 4.1.1
 Homepage: https://github.com/pop-os/cosmic
@@ -14,6 +15,7 @@ Vcs-Git: https://github.com/pop-os/cosmic.git
 Package: pop-cosmic
 Architecture: amd64
 Depends:
+  pop-launcher,
   ${misc:Depends},
-  ${shlib:Depends}
+  ${shlib:Depends},
 Description: Computer Operating System Main Interface Components
