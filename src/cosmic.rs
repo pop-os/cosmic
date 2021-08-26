@@ -19,6 +19,7 @@ use meta::{
     BackgroundContent,
     BackgroundGroup,
     Display,
+    DisplayCorner,
     KeyBinding,
     ModalOptions,
     Plugin,
@@ -253,6 +254,19 @@ impl Cosmic {
     }
 
     pub fn start(&self, display: &Display) {
+        match display.workspace_manager() {
+            Some(workspace_manager) => {
+                // Default to vertical workspaces
+                workspace_manager.override_workspace_layout(
+                    DisplayCorner::Topleft,
+                    true,
+                    -1,
+                    1
+                );
+            },
+            None => error!("failed to find workspace manager"),
+        }
+
         meta::functions::window_group_for_display(&display)
             .expect("failed to find display window group")
             .insert_child_below::<_, Actor>(&self.background_group, None);
