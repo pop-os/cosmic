@@ -3,12 +3,23 @@ use clutter::{
     ActorExt,
     Color,
     Text,
+    TextExt,
+};
+use gdesktop_enums::{
+    BackgroundStyle,
+};
+use glib::{
+    Cast,
 };
 use log::{
     error,
     info,
 };
 use meta::{
+    Background,
+    BackgroundActor,
+    BackgroundContent,
+    BackgroundGroup,
     Display,
     KeyBinding,
     ModalOptions,
@@ -21,15 +32,20 @@ use std::{
     cell::RefCell,
 };
 
-use crate::Direction;
+use crate::{
+    Direction,
+    wrapper::with_cosmic,
+};
 
 pub struct Cosmic {
+    background_group: BackgroundGroup,
     launcher_actor: RefCell<Option<Actor>>,
 }
 
 impl Cosmic {
     pub fn new() -> Self {
         Self {
+            background_group: BackgroundGroup::new(),
             launcher_actor: RefCell::new(None),
         }
     }
@@ -46,14 +62,14 @@ impl Cosmic {
         let workspace_manager = match display.workspace_manager() {
             Some(some) => some,
             None => {
-                error!("failed to get workspace manager");
+                error!("failed to find workspace manager");
                 return;
             }
         };
         let workspace = match workspace_manager.active_workspace() {
             Some(some) => some,
             None => {
-                error!("failed to get active workspace");
+                error!("failed to find active workspace");
                 return;
             }
         };
@@ -193,6 +209,47 @@ impl Cosmic {
         }
     }
 
+    pub fn on_monitors_changed(&self, display: &Display) {
+        self.background_group.destroy_all_children();
+
+        let mut color = Color::new(128, 128, 128, 255);
+
+        let background_file = gio::File::for_path(
+            "/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png"
+        );
+
+        for monitor in 0..display.n_monitors() {
+            let rect = display.monitor_geometry(monitor);
+
+            let background_actor = BackgroundActor::new(&display, monitor);
+            let content = background_actor.content().expect("no BackgroundActor content");
+            let background_content = content.downcast::<BackgroundContent>()
+                .expect("failed to downcast BackgroundActor content to BackgroundContent");
+
+            background_actor.set_position(rect.x() as f32, rect.y() as f32);
+            background_actor.set_size(rect.width() as f32, rect.height() as f32);
+
+            let background = Background::new(&display);
+            background.set_color(&mut color);
+            background.set_file(Some(&background_file), BackgroundStyle::Zoom);
+            background_content.set_background(&background);
+
+            self.background_group.add_child(&background_actor);
+        }
+    }
+
+    pub fn start(&self, display: &Display) {
+        meta::functions::window_group_for_display(&display)
+            .expect("failed to find display window group")
+            .insert_child_below::<_, Actor>(&self.background_group, None);
+
+        self.on_monitors_changed(display);
+
+        meta::functions::stage_for_display(&display)
+            .expect("failed to find display stage")
+            .show();
+    }
+
     pub fn toggle_launcher(&self, plugin: &Plugin, display: &Display) {
         let stage = match meta::functions::stage_for_display(&display) {
             Some(some) => some,
@@ -209,17 +266,59 @@ impl Cosmic {
         } else {
             plugin.begin_modal(ModalOptions::empty(), Self::current_time(display));
 
-            let fg = Color::new(0xFF, 0xFF, 0xFF, 0xFF);
-            let bg = Color::new(0x20, 0x20, 0x20, 0xFF);
+            let color_fg = Color::new(0xFF, 0xFF, 0xFF, 0xFF);
+            let color_sel = Color::new(0x00, 0x7F, 0xFF, 0xFF);
+            let color_bg = Color::new(0x20, 0x20, 0x20, 0xFF);
+
+            let (launcher_w, launcher_h) = (480.0, 48.0);
+            let (stage_w, stage_h) = stage.size();
+            let launcher_x = (stage_w - launcher_w) / 2.0;
+            let launcher_y = (stage_h - launcher_h) / 2.0;
 
             let actor = Actor::new();
-            actor.set_position(600.0, 600.0);
-            actor.set_size(300.0, 300.0);
-            actor.set_background_color(Some(&bg));
+            actor.set_position(launcher_x, launcher_y);
+            actor.set_size(launcher_w, launcher_h);
+            actor.set_background_color(Some(&color_bg));
             stage.add_child(&actor);
 
-            let text = Text::new_full("IBM Plex Mono 48", "COSMIC", &fg);
-            actor.add_child(&text);
+            let text_actor = Text::new_full("IBM Plex Mono 16", "", &color_fg);
+            ActorExt::set_position(&text_actor, 8.0, 8.0);
+            text_actor.set_activatable(true);
+            text_actor.set_cursor_visible(true);
+            text_actor.set_editable(true);
+            text_actor.set_reactive(true);
+            text_actor.set_selectable(true);
+            text_actor.set_selection_color(Some(&color_sel));
+            {
+                let plugin = plugin.clone();
+                let display = display.clone();
+                text_actor.connect_activate(move |text_actor| {
+                    info!("launcher: {:?}", text_actor.text());
+                    // Close launcher on enter
+                    with_cosmic(&plugin, |cosmic| {
+                        cosmic.toggle_launcher(&plugin, &display);
+                    });
+                });
+            }
+            {
+                let plugin = plugin.clone();
+                let display = display.clone();
+                text_actor.connect_key_press_event(move |_, key_event| {
+                    match char::from_u32(key_event.unicode_value) {
+                        Some('\u{1b}') => {
+                            // Close launcher on escape
+                            with_cosmic(&plugin, |cosmic| {
+                                cosmic.toggle_launcher(&plugin, &display);
+                            });
+                            true
+                        },
+                        _ => false
+                    }
+                });
+            }
+            actor.add_child(&text_actor);
+            text_actor.grab_key_focus();
+            //TODO: set clutter backend default input method so there are no errors
 
             self.launcher_actor.replace(Some(actor));
         }

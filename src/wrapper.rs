@@ -1,14 +1,3 @@
-use clutter::{
-    Actor,
-    ActorExt,
-    Color,
-};
-use clutter_sys::{
-    ClutterKeyEvent,
-};
-use gdesktop_enums::{
-    BackgroundStyle,
-};
 use gio::{
     AppInfo,
     AppLaunchContext,
@@ -21,7 +10,6 @@ use gio::{
     },
 };
 use glib::{
-    Cast,
     translate::{
         FromGlibPtrNone,
         IntoGlib,
@@ -30,9 +18,6 @@ use glib::{
 };
 use glib_sys::{
     gboolean,
-    gpointer,
-    GFALSE,
-    GTRUE,
 };
 use libc::c_int;
 use log::{
@@ -40,19 +25,14 @@ use log::{
     info,
 };
 use meta::{
-    Background,
-    BackgroundActor,
-    BackgroundContent,
-    BackgroundGroup,
-    Display,
     KeyBinding,
     KeyBindingFlags,
+    MonitorManager,
     Plugin,
     PluginExt,
     WindowActor,
 };
 use meta_sys::{
-    MetaDisplay,
     MetaKeyBinding,
     MetaMotionDirection,
     MetaPlugin,
@@ -106,7 +86,7 @@ extern "C" {
     pub fn cosmic_plugin_data(plugin: *mut MetaPlugin) -> *mut CosmicPluginData;
 }
 
-fn with_cosmic<T, F: FnMut(&Cosmic) -> T>(plugin: &Plugin, mut f: F) -> Option<T> {
+pub fn with_cosmic<T, F: FnMut(&Cosmic) -> T>(plugin: &Plugin, mut f: F) -> Option<T> {
     match CosmicPluginData::from_plugin(plugin) {
         Some(data) => Some(f(&data.0)),
         None => {
@@ -183,39 +163,24 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
 
     let display = plugin.display().expect("failed to find plugin display");
 
-    let background_group = BackgroundGroup::new();
-    meta::functions::window_group_for_display(&display)
-        .expect("failed to find display window group")
-        .insert_child_below::<_, Actor>(&background_group, None);
+    with_cosmic(&plugin, |cosmic| {
+        cosmic.start(&display);
+    });
 
-    let mut color = Color::new(128, 128, 128, 255);
-
-    let background_file = gio::File::for_path(
-        "/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png"
-    );
-
-    for monitor in 0..display.n_monitors() {
-        let rect = display.monitor_geometry(monitor);
-
-        let background_actor = BackgroundActor::new(&display, monitor);
-        let content = background_actor.content().expect("no BackgroundActor content");
-        let background_content = content.downcast::<BackgroundContent>()
-            .expect("failed to downcast BackgroundActor content to BackgroundContent");
-
-        background_actor.set_position(rect.x() as f32, rect.y() as f32);
-        background_actor.set_size(rect.width() as f32, rect.height() as f32);
-
-        let background = Background::new(&display);
-        background.set_color(&mut color);
-        background.set_file(Some(&background_file), BackgroundStyle::Zoom);
-        background_content.set_background(&background);
-
-        background_group.add_child(&background_actor);
+    match MonitorManager::get() {
+        Some(monitor_manager) => {
+            let plugin = plugin.clone();
+            let display = display.clone();
+            monitor_manager.connect_monitors_changed(move |_| {
+                with_cosmic(&plugin, |cosmic| {
+                    cosmic.on_monitors_changed(&display);
+                });
+            });
+        },
+        None => {
+            error!("failed to find monitor manager");
+        },
     }
-
-    meta::functions::stage_for_display(&display)
-        .expect("failed to find display stage")
-        .show();
 
     {
         let plugin = plugin.clone();
@@ -243,7 +208,12 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     display.add_keybinding("www", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
         if let Some(app_info) = AppInfo::default_for_uri_scheme("http") {
             //TODO: launch context?
-            app_info.launch::<AppLaunchContext>(&[], None);
+            match app_info.launch::<AppLaunchContext>(&[], None) {
+                Ok(_) => (),
+                Err(err) => {
+                    error!("failed to launch web browser: {}", err);
+                },
+            }
         }
     });
 
