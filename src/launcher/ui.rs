@@ -219,7 +219,7 @@ pub struct LauncherUi {
 
 impl LauncherUi {
     pub fn new(parent: &Actor, plugin: &Plugin, display: &Display) -> Rc<Self> {
-        let (w, h) = (480.0, 480.0);
+        let (w, h) = (480.0, 440.0);
         let (parent_w, parent_h) = parent.size();
         let x = (parent_w - w) / 2.0;
         let y = (parent_h - h) / 2.0;
