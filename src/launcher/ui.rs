@@ -40,58 +40,6 @@ use std::{
 
 use crate::wrapper::with_cosmic;
 
-fn actor_rounded_background(actor: &Actor, radius: f64, fill: bool, color: Rc<Cell<u32>>) -> Canvas {
-    let (w, h) = actor.size();
-
-    //TODO: find out why this requires so much sugar
-    let canvas = Canvas::new().unwrap().dynamic_cast::<Canvas>().unwrap();
-    canvas.set_size(w as i32, h as i32);
-
-    actor.set_content(Some(&canvas));
-    actor.set_content_scaling_filters(clutter::ScalingFilter::Trilinear, clutter::ScalingFilter::Linear);
-    actor.set_request_mode(clutter::RequestMode::ContentSize);
-
-    let actor = actor.clone();
-    canvas.connect_draw(move |canvas, cairo, surface_width, surface_height| {
-        let x = 1.0;
-        let y = 1.0;
-        let w = surface_width as f64 - 2.0;
-        let h = surface_height as f64 - 2.0;
-        let degrees = f64::consts::PI / 180.0;
-
-        cairo.save();
-        cairo.set_operator(cairo::Operator::Clear);
-        cairo.paint();
-        cairo.restore();
-
-        cairo.new_sub_path();
-        cairo.arc(x + w - radius, y + radius, radius, -90.0 * degrees, 0.0 * degrees);
-        cairo.arc(x + w - radius, y + h - radius, radius, 0.0 * degrees, 90.0 * degrees);
-        cairo.arc(x + radius, y + h - radius, radius, 90.0 * degrees, 180.0 * degrees);
-        cairo.arc(x + radius, y + radius, radius, 180.0 * degrees, 270.0 * degrees);
-        cairo.close_path();
-
-        let color = color.get();
-        cairo.set_source_rgba(
-            ((color >> 24) & 0xFF) as f64 / 255.0,
-            ((color >> 16) & 0xFF) as f64 / 255.0,
-            ((color >> 8) & 0xFF) as f64 / 255.0,
-            ((color >> 0) & 0xFF) as f64 / 255.0
-        );
-        if fill {
-            cairo.fill();
-        } else {
-            cairo.stroke();
-        }
-
-        true
-    });
-
-    canvas.invalidate();
-
-    canvas
-}
-
 pub struct Theme;
 
 impl Theme {
@@ -115,8 +63,103 @@ impl Theme {
         Color::new(0x5A, 0x57, 0x57, 0xFF)
     }
 
+    pub fn color_input() -> Color {
+        Color::new(0x2B, 0x29, 0x28, 0xFF)
+    }
+
     pub fn color_text() -> Color {
         Color::new(0xE6, 0xE6, 0xE6, 0xFF)
+    }
+}
+
+pub struct RoundedRect {
+    actor: Actor,
+    canvas: Canvas,
+    fill_color: Rc<Cell<u32>>,
+    stroke_color: Rc<Cell<u32>>,
+}
+
+impl RoundedRect {
+    pub fn new(w: i32, h: i32, radius: f64, fill_color: Option<&Color>, stroke_color: Option<&Color>) -> Self {
+        //TODO: find out why this requires so much sugar
+        let canvas = Canvas::new().unwrap().dynamic_cast::<Canvas>().unwrap();
+        canvas.set_size(w, h);
+
+        let actor = Actor::new();
+        //actor.set_size(w as f32, h as f32);
+        actor.set_content(Some(&canvas));
+        actor.set_content_scaling_filters(clutter::ScalingFilter::Trilinear, clutter::ScalingFilter::Linear);
+        actor.set_request_mode(clutter::RequestMode::ContentSize);
+
+        let fill_color = Rc::new(Cell::new(fill_color.map_or(0, |x| x.to_pixel())));
+        let stroke_color = Rc::new(Cell::new(stroke_color.map_or(0, |x| x.to_pixel())));
+
+        {
+            let actor = actor.clone();
+            let fill_color = fill_color.clone();
+            let stroke_color = stroke_color.clone();
+            canvas.connect_draw(move |canvas, cairo, surface_width, surface_height| {
+                let x = 1.0;
+                let y = 1.0;
+                let w = surface_width as f64 - 2.0;
+                let h = surface_height as f64 - 2.0;
+                let degrees = f64::consts::PI / 180.0;
+
+                cairo.save();
+                cairo.set_operator(cairo::Operator::Clear);
+                cairo.paint();
+                cairo.restore();
+
+                for (color, fill) in &[
+                    (fill_color.get(), true),
+                    (stroke_color.get(), false),
+                ] {
+                    cairo.new_sub_path();
+                    cairo.arc(x + w - radius, y + radius, radius, -90.0 * degrees, 0.0 * degrees);
+                    cairo.arc(x + w - radius, y + h - radius, radius, 0.0 * degrees, 90.0 * degrees);
+                    cairo.arc(x + radius, y + h - radius, radius, 90.0 * degrees, 180.0 * degrees);
+                    cairo.arc(x + radius, y + radius, radius, 180.0 * degrees, 270.0 * degrees);
+                    cairo.close_path();
+
+                    cairo.set_source_rgba(
+                        ((color >> 24) & 0xFF) as f64 / 255.0,
+                        ((color >> 16) & 0xFF) as f64 / 255.0,
+                        ((color >> 8) & 0xFF) as f64 / 255.0,
+                        ((color >> 0) & 0xFF) as f64 / 255.0
+                    );
+                    if *fill {
+                        cairo.fill();
+                    } else {
+                        cairo.stroke();
+                    }
+                }
+
+                true
+            });
+        }
+
+        canvas.invalidate();
+
+        Self {
+            actor,
+            canvas,
+            fill_color,
+            stroke_color,
+        }
+    }
+
+    pub fn actor(&self) -> &Actor {
+        &self.actor
+    }
+
+    pub fn set_fill_color(&self, color: Option<&Color>) {
+        self.fill_color.set(color.map_or(0, |x| x.to_pixel()));
+        self.canvas.invalidate();
+    }
+
+    pub fn set_stroke_color(&self, color: Option<&Color>) {
+        self.fill_color.set(color.map_or(0, |x| x.to_pixel()));
+        self.canvas.invalidate();
     }
 }
 
@@ -126,11 +169,9 @@ pub struct LauncherEntry {
 
 impl LauncherEntry {
     pub fn new(parent: &Actor) -> Self {
-        let rect = Actor::new();
-        rect.set_position(8.0, 8.0);
-        rect.set_size(480.0 - 16.0, 32.0 - 4.0);
-        actor_rounded_background(&rect, 5.0, false, Rc::new(Cell::new(Theme::color_border().to_pixel())));
-        parent.add_child(&rect);
+        let rect = RoundedRect::new(480 - 16, 32 - 4, 5.0, Some(&Theme::color_input()), Some(&Theme::color_border()));
+        rect.actor().set_position(8.0, 8.0);
+        parent.add_child(rect.actor());
 
         let actor = Text::new_full(Theme::font_name(), "", &Theme::color_text());
         ActorExt::set_position(&actor, 8.0, 6.0);
@@ -141,7 +182,7 @@ impl LauncherEntry {
         actor.set_selectable(true);
         actor.set_selection_color(Some(&Theme::color_highlight()));
         actor.set_single_line_mode(true);
-        rect.add_child(&actor);
+        rect.actor().add_child(&actor);
 
         Self {
             actor,
@@ -151,9 +192,7 @@ impl LauncherEntry {
 
 
 pub struct LauncherItem {
-    actor: Actor,
-    canvas: Canvas,
-    color: Rc<Cell<u32>>,
+    rect: RoundedRect,
     name: Text,
     description: Text,
     active: Cell<bool>,
@@ -161,31 +200,25 @@ pub struct LauncherItem {
 
 impl LauncherItem {
     pub fn new(parent: &Actor, i: usize) -> Self {
-        let color = Rc::new(Cell::new(0));
-
-        let actor = Actor::new();
-        actor.set_position(8.0, 2.0 + i as f32 * 48.0);
-        actor.set_size(480.0 - 16.0, 48.0 - 4.0);
-        let canvas = actor_rounded_background(&actor, 5.0, true, color.clone());
-        parent.add_child(&actor);
+        let rect = RoundedRect::new(480 - 16, 48 - 4, 5.0, None, None);
+        rect.actor().set_position(8.0, 2.0 + i as f32 * 48.0);
+        parent.add_child(rect.actor());
 
         let name = Text::new_full(Theme::font_name(), "", &Theme::color_text());
         ActorExt::set_position(&name, 8.0, 6.0);
         name.set_size(480.0 - 32.0, -1.0);
-        actor.add_child(&name);
+        rect.actor().add_child(&name);
 
         let description = Text::new_full(Theme::small_font_name(), "", &Theme::color_text());
         ActorExt::set_position(&description, 8.0, 22.0);
         description.set_ellipsize(pango::EllipsizeMode::End);
         description.set_size(480.0 - 32.0, -1.0);
-        actor.add_child(&description);
+        rect.actor().add_child(&description);
 
         let active = Cell::new(false);
 
         Self {
-            actor,
-            canvas,
-            color,
+            rect,
             name,
             description,
             active,
@@ -200,11 +233,10 @@ impl LauncherItem {
 
     pub fn select(&self, selected: bool) {
         if selected && self.active.get() {
-            self.color.set(Theme::color_highlight().to_pixel());
+            self.rect.set_fill_color(Some(&Theme::color_highlight()));
         } else {
-            self.color.set(0);
+            self.rect.set_fill_color(None);
         }
-        self.canvas.invalidate();
     }
 
     pub fn set(&self, result: &SearchResult) {
@@ -215,7 +247,7 @@ impl LauncherItem {
 }
 
 pub struct LauncherUi {
-    pub actor: Actor,
+    pub rect: RoundedRect,
     entry: LauncherEntry,
     items: Box<[LauncherItem]>,
     selected: Cell<usize>,
@@ -223,24 +255,22 @@ pub struct LauncherUi {
 
 impl LauncherUi {
     pub fn new(parent: &Actor, plugin: &Plugin, display: &Display) -> Rc<Self> {
-        let (w, h) = (480.0, 440.0);
+        let (w, h) = (480, 440);
         let (parent_w, parent_h) = parent.size();
-        let x = (parent_w - w) / 2.0;
-        let y = (parent_h - h) / 2.0;
+        let x = (parent_w - w as f32) / 2.0;
+        let y = (parent_h - h as f32) / 2.0;
 
-        let actor = Actor::new();
-        actor.set_position(x, y);
-        actor.set_size(w, h);
-        actor_rounded_background(&actor, 5.0, true, Rc::new(Cell::new(Theme::color_background().to_pixel())));
-        parent.add_child(&actor);
+        let rect = RoundedRect::new(w, h, 5.0, Some(&Theme::color_background()), None);
+        rect.actor().set_position(x, y);
+        parent.add_child(rect.actor());
 
-        let entry = LauncherEntry::new(&actor);
+        let entry = LauncherEntry::new(rect.actor());
 
         let items = {
             let mut items = Vec::new();
             while items.len() < 8 {
                 let item = LauncherItem::new(
-                    &actor,
+                    rect.actor(),
                     items.len() + 1
                 );
                 items.push(item);
@@ -251,7 +281,7 @@ impl LauncherUi {
         let selected = Cell::new(0);
 
         let ret = Rc::new(Self {
-            actor,
+            rect,
             entry,
             items,
             selected,

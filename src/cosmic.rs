@@ -295,7 +295,7 @@ impl Cosmic {
         };
 
         if let Some(launcher_ui) = self.launcher_ui.replace(None) {
-            stage.remove_child(&launcher_ui.actor);
+            stage.remove_child(launcher_ui.rect.actor());
 
             plugin.end_modal(Self::current_time(display));
         } else {
