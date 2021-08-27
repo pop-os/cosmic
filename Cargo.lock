@@ -154,9 +154,11 @@ name = "clutter"
 version = "0.0.1"
 dependencies = [
  "bitflags",
+ "cairo-rs",
  "clutter-sys",
  "glib",
  "libc",
+ "pango",
 ]
 
 [[package]]
@@ -628,6 +630,7 @@ dependencies = [
  "glib",
  "libc",
  "meta-sys",
+ "pango",
 ]
 
 [[package]]
@@ -668,6 +671,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
 
 [[package]]
+name = "pango"
+version = "0.15.0"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#9964f36f4bc942b33145a62c0939720a3cc12b09"
+dependencies = [
+ "bitflags",
+ "glib",
+ "libc",
+ "once_cell",
+ "pango-sys",
+]
+
+[[package]]
 name = "pango-sys"
 version = "0.15.0"
 source = "git+https://github.com/gtk-rs/gtk-rs-core#9964f36f4bc942b33145a62c0939720a3cc12b09"
@@ -706,6 +721,7 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 name = "pop-cosmic"
 version = "0.1.0"
 dependencies = [
+ "cairo-rs",
  "cc",
  "clutter",
  "clutter-sys",
@@ -719,6 +735,7 @@ dependencies = [
  "log",
  "meta",
  "meta-sys",
+ "pango",
  "pop-launcher",
  "serde_json",
 ]

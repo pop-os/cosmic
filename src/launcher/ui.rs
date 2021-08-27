@@ -1,7 +1,10 @@
 use clutter::{
     Actor,
     ActorExt,
+    Canvas,
+    CanvasExt,
     Color,
+    ContentExt,
     Text,
     TextExt,
 };
@@ -15,6 +18,7 @@ use gio::{
         AppInfoExt,
     },
 };
+use glib::Cast;
 use log::{
     error,
     info,
@@ -30,10 +34,63 @@ use pop_launcher::{
 };
 use std::{
     cell::Cell,
+    f64,
     rc::Rc,
 };
 
 use crate::wrapper::with_cosmic;
+
+fn actor_rounded_background(actor: &Actor, radius: f64, fill: bool, color: Rc<Cell<u32>>) -> Canvas {
+    let (w, h) = actor.size();
+
+    //TODO: find out why this requires so much sugar
+    let canvas = Canvas::new().unwrap().dynamic_cast::<Canvas>().unwrap();
+    canvas.set_size(w as i32, h as i32);
+
+    actor.set_content(Some(&canvas));
+    actor.set_content_scaling_filters(clutter::ScalingFilter::Trilinear, clutter::ScalingFilter::Linear);
+    actor.set_request_mode(clutter::RequestMode::ContentSize);
+
+    let actor = actor.clone();
+    canvas.connect_draw(move |canvas, cairo, surface_width, surface_height| {
+        let x = 1.0;
+        let y = 1.0;
+        let w = surface_width as f64 - 2.0;
+        let h = surface_height as f64 - 2.0;
+        let degrees = f64::consts::PI / 180.0;
+
+        cairo.save();
+        cairo.set_operator(cairo::Operator::Clear);
+        cairo.paint();
+        cairo.restore();
+
+        cairo.new_sub_path();
+        cairo.arc(x + w - radius, y + radius, radius, -90.0 * degrees, 0.0 * degrees);
+        cairo.arc(x + w - radius, y + h - radius, radius, 0.0 * degrees, 90.0 * degrees);
+        cairo.arc(x + radius, y + h - radius, radius, 90.0 * degrees, 180.0 * degrees);
+        cairo.arc(x + radius, y + radius, radius, 180.0 * degrees, 270.0 * degrees);
+        cairo.close_path();
+
+        let color = color.get();
+        cairo.set_source_rgba(
+            ((color >> 24) & 0xFF) as f64 / 255.0,
+            ((color >> 16) & 0xFF) as f64 / 255.0,
+            ((color >> 8) & 0xFF) as f64 / 255.0,
+            ((color >> 0) & 0xFF) as f64 / 255.0
+        );
+        if fill {
+            cairo.fill();
+        } else {
+            cairo.stroke();
+        }
+
+        true
+    });
+
+    canvas.invalidate();
+
+    canvas
+}
 
 pub struct Theme;
 
@@ -55,7 +112,7 @@ impl Theme {
     }
 
     pub fn color_bg() -> Color {
-        Color::new(0x20, 0x20, 0x20, 0xFF)
+        Color::new(0x30, 0x30, 0x30, 0xFF)
     }
 }
 
@@ -65,8 +122,14 @@ pub struct LauncherEntry {
 
 impl LauncherEntry {
     pub fn new(parent: &Actor) -> Self {
+        let rect = Actor::new();
+        rect.set_position(8.0, 8.0);
+        rect.set_size(480.0 - 16.0, 32.0 - 4.0);
+        actor_rounded_background(&rect, 5.0, false, Rc::new(Cell::new(Theme::color_fg().to_pixel())));
+        parent.add_child(&rect);
+
         let actor = Text::new_full(Theme::font_name(), "", &Theme::color_fg());
-        ActorExt::set_position(&actor, 8.0, 8.0);
+        ActorExt::set_position(&actor, 8.0, 6.0);
         actor.set_activatable(true);
         actor.set_cursor_visible(true);
         actor.set_editable(true);
@@ -74,7 +137,7 @@ impl LauncherEntry {
         actor.set_selectable(true);
         actor.set_selection_color(Some(&Theme::color_sel()));
         actor.set_single_line_mode(true);
-        parent.add_child(&actor);
+        rect.add_child(&actor);
 
         Self {
             actor,
@@ -85,6 +148,8 @@ impl LauncherEntry {
 
 pub struct LauncherItem {
     actor: Actor,
+    canvas: Canvas,
+    color: Rc<Cell<u32>>,
     name: Text,
     description: Text,
     active: Cell<bool>,
@@ -92,22 +157,31 @@ pub struct LauncherItem {
 
 impl LauncherItem {
     pub fn new(parent: &Actor, i: usize) -> Self {
+        let color = Rc::new(Cell::new(0));
+
         let actor = Actor::new();
-        actor.set_position(8.0, 8.0 + i as f32 * 48.0);
-        actor.set_size(464.0, 32.0);
+        actor.set_position(8.0, 2.0 + i as f32 * 48.0);
+        actor.set_size(480.0 - 16.0, 48.0 - 4.0);
+        let canvas = actor_rounded_background(&actor, 5.0, true, color.clone());
         parent.add_child(&actor);
 
         let name = Text::new_full(Theme::font_name(), "", &Theme::color_fg());
+        ActorExt::set_position(&name, 8.0, 6.0);
+        name.set_size(480.0 - 32.0, -1.0);
         actor.add_child(&name);
 
         let description = Text::new_full(Theme::small_font_name(), "", &Theme::color_fg());
-        ActorExt::set_position(&description, 0.0, 16.0);
+        ActorExt::set_position(&description, 8.0, 22.0);
+        description.set_ellipsize(pango::EllipsizeMode::End);
+        description.set_size(480.0 - 32.0, -1.0);
         actor.add_child(&description);
 
         let active = Cell::new(false);
 
         Self {
             actor,
+            canvas,
+            color,
             name,
             description,
             active,
@@ -122,10 +196,11 @@ impl LauncherItem {
 
     pub fn select(&self, selected: bool) {
         if selected && self.active.get() {
-            self.actor.set_background_color(Some(&Theme::color_sel()));
+            self.color.set(Theme::color_sel().to_pixel());
         } else {
-            self.actor.set_background_color(None);
+            self.color.set(0);
         }
+        self.canvas.invalidate();
     }
 
     pub fn set(&self, result: &SearchResult) {
@@ -152,7 +227,7 @@ impl LauncherUi {
         let actor = Actor::new();
         actor.set_position(x, y);
         actor.set_size(w, h);
-        actor.set_background_color(Some(&Theme::color_bg()));
+        actor_rounded_background(&actor, 5.0, true, Rc::new(Cell::new(Theme::color_bg().to_pixel())));
         parent.add_child(&actor);
 
         let entry = LauncherEntry::new(&actor);
