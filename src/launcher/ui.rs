@@ -103,16 +103,20 @@ impl Theme {
         "Fira Sans Semi-Light 9"
     }
 
-    pub fn color_fg() -> Color {
-        Color::new(0xFF, 0xFF, 0xFF, 0xFF)
+    pub fn color_background() -> Color {
+        Color::new(0x33, 0x30, 0x2F, 0xFF)
     }
 
-    pub fn color_sel() -> Color {
-        Color::new(0x00, 0x7F, 0xFF, 0xFF)
+    pub fn color_border() -> Color {
+        Color::new(0xFB, 0xB8, 0x6C, 0xFF)
     }
 
-    pub fn color_bg() -> Color {
-        Color::new(0x30, 0x30, 0x30, 0xFF)
+    pub fn color_highlight() -> Color {
+        Color::new(0x5A, 0x57, 0x57, 0xFF)
+    }
+
+    pub fn color_text() -> Color {
+        Color::new(0xE6, 0xE6, 0xE6, 0xFF)
     }
 }
 
@@ -125,17 +129,17 @@ impl LauncherEntry {
         let rect = Actor::new();
         rect.set_position(8.0, 8.0);
         rect.set_size(480.0 - 16.0, 32.0 - 4.0);
-        actor_rounded_background(&rect, 5.0, false, Rc::new(Cell::new(Theme::color_fg().to_pixel())));
+        actor_rounded_background(&rect, 5.0, false, Rc::new(Cell::new(Theme::color_border().to_pixel())));
         parent.add_child(&rect);
 
-        let actor = Text::new_full(Theme::font_name(), "", &Theme::color_fg());
+        let actor = Text::new_full(Theme::font_name(), "", &Theme::color_text());
         ActorExt::set_position(&actor, 8.0, 6.0);
         actor.set_activatable(true);
         actor.set_cursor_visible(true);
         actor.set_editable(true);
         actor.set_reactive(true);
         actor.set_selectable(true);
-        actor.set_selection_color(Some(&Theme::color_sel()));
+        actor.set_selection_color(Some(&Theme::color_highlight()));
         actor.set_single_line_mode(true);
         rect.add_child(&actor);
 
@@ -165,12 +169,12 @@ impl LauncherItem {
         let canvas = actor_rounded_background(&actor, 5.0, true, color.clone());
         parent.add_child(&actor);
 
-        let name = Text::new_full(Theme::font_name(), "", &Theme::color_fg());
+        let name = Text::new_full(Theme::font_name(), "", &Theme::color_text());
         ActorExt::set_position(&name, 8.0, 6.0);
         name.set_size(480.0 - 32.0, -1.0);
         actor.add_child(&name);
 
-        let description = Text::new_full(Theme::small_font_name(), "", &Theme::color_fg());
+        let description = Text::new_full(Theme::small_font_name(), "", &Theme::color_text());
         ActorExt::set_position(&description, 8.0, 22.0);
         description.set_ellipsize(pango::EllipsizeMode::End);
         description.set_size(480.0 - 32.0, -1.0);
@@ -196,7 +200,7 @@ impl LauncherItem {
 
     pub fn select(&self, selected: bool) {
         if selected && self.active.get() {
-            self.color.set(Theme::color_sel().to_pixel());
+            self.color.set(Theme::color_highlight().to_pixel());
         } else {
             self.color.set(0);
         }
@@ -227,7 +231,7 @@ impl LauncherUi {
         let actor = Actor::new();
         actor.set_position(x, y);
         actor.set_size(w, h);
-        actor_rounded_background(&actor, 5.0, true, Rc::new(Cell::new(Theme::color_bg().to_pixel())));
+        actor_rounded_background(&actor, 5.0, true, Rc::new(Cell::new(Theme::color_background().to_pixel())));
         parent.add_child(&actor);
 
         let entry = LauncherEntry::new(&actor);
