@@ -10,6 +10,8 @@ cc = "1.0.69"
 cairo-rs = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 env_logger = "0.9.0"
 evdev = "0.11.0"
+gdk = { git = "https://github.com/gtk-rs/gtk3-rs" }
+gtk = { git = "https://github.com/gtk-rs/gtk3-rs" }
 gio = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 glib = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 glib-sys = { git = "https://github.com/gtk-rs/gtk-rs-core" }
@@ -26,6 +28,9 @@ features = ["v1_10"]
 [dependencies.clutter-sys]
 path = "mutter-rs/clutter-sys"
 features = ["v1_10"]
+
+[dependencies.cogl]
+path = "mutter-rs/cogl"
 
 [dependencies.gdesktop_enums]
 path = "mutter-rs/gdesktop_enums"

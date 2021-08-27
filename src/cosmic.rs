@@ -254,6 +254,9 @@ impl Cosmic {
     }
 
     pub fn start(&self, display: &Display) {
+        // We use GTK to supply icons, it must be initialized when mutter is ready
+        gtk::init().expect("failed to initialize gtk");
+
         match display.workspace_manager() {
             Some(workspace_manager) => {
                 // Default to vertical workspaces

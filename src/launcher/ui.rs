@@ -1,10 +1,7 @@
 use clutter::{
     Actor,
     ActorExt,
-    Canvas,
-    CanvasExt,
     Color,
-    ContentExt,
     Text,
     TextExt,
 };
@@ -18,7 +15,6 @@ use gio::{
         AppInfoExt,
     },
 };
-use glib::Cast;
 use log::{
     error,
     info,
@@ -28,17 +24,21 @@ use meta::{
     Plugin,
 };
 use pop_launcher::{
+    IconSource,
     Request,
     Response,
     SearchResult,
 };
 use std::{
     cell::Cell,
-    f64,
     rc::Rc,
 };
 
-use crate::wrapper::with_cosmic;
+use crate::{
+    Icon,
+    RoundedRect,
+    wrapper::with_cosmic,
+};
 
 pub struct Theme;
 
@@ -72,97 +72,6 @@ impl Theme {
     }
 }
 
-pub struct RoundedRect {
-    actor: Actor,
-    canvas: Canvas,
-    fill_color: Rc<Cell<u32>>,
-    stroke_color: Rc<Cell<u32>>,
-}
-
-impl RoundedRect {
-    pub fn new(w: i32, h: i32, radius: f64, fill_color: Option<&Color>, stroke_color: Option<&Color>) -> Self {
-        //TODO: find out why this requires so much sugar
-        let canvas = Canvas::new().unwrap().dynamic_cast::<Canvas>().unwrap();
-        canvas.set_size(w, h);
-
-        let actor = Actor::new();
-        //actor.set_size(w as f32, h as f32);
-        actor.set_content(Some(&canvas));
-        actor.set_content_scaling_filters(clutter::ScalingFilter::Trilinear, clutter::ScalingFilter::Linear);
-        actor.set_request_mode(clutter::RequestMode::ContentSize);
-
-        let fill_color = Rc::new(Cell::new(fill_color.map_or(0, |x| x.to_pixel())));
-        let stroke_color = Rc::new(Cell::new(stroke_color.map_or(0, |x| x.to_pixel())));
-
-        {
-            let actor = actor.clone();
-            let fill_color = fill_color.clone();
-            let stroke_color = stroke_color.clone();
-            canvas.connect_draw(move |canvas, cairo, surface_width, surface_height| {
-                let x = 1.0;
-                let y = 1.0;
-                let w = surface_width as f64 - 2.0;
-                let h = surface_height as f64 - 2.0;
-                let degrees = f64::consts::PI / 180.0;
-
-                cairo.save();
-                cairo.set_operator(cairo::Operator::Clear);
-                cairo.paint();
-                cairo.restore();
-
-                for (color, fill) in &[
-                    (fill_color.get(), true),
-                    (stroke_color.get(), false),
-                ] {
-                    cairo.new_sub_path();
-                    cairo.arc(x + w - radius, y + radius, radius, -90.0 * degrees, 0.0 * degrees);
-                    cairo.arc(x + w - radius, y + h - radius, radius, 0.0 * degrees, 90.0 * degrees);
-                    cairo.arc(x + radius, y + h - radius, radius, 90.0 * degrees, 180.0 * degrees);
-                    cairo.arc(x + radius, y + radius, radius, 180.0 * degrees, 270.0 * degrees);
-                    cairo.close_path();
-
-                    cairo.set_source_rgba(
-                        ((color >> 24) & 0xFF) as f64 / 255.0,
-                        ((color >> 16) & 0xFF) as f64 / 255.0,
-                        ((color >> 8) & 0xFF) as f64 / 255.0,
-                        ((color >> 0) & 0xFF) as f64 / 255.0
-                    );
-                    if *fill {
-                        cairo.fill();
-                    } else {
-                        cairo.stroke();
-                    }
-                }
-
-                true
-            });
-        }
-
-        canvas.invalidate();
-
-        Self {
-            actor,
-            canvas,
-            fill_color,
-            stroke_color,
-        }
-    }
-
-    pub fn actor(&self) -> &Actor {
-        &self.actor
-    }
-
-    pub fn set_fill_color(&self, color: Option<&Color>) {
-        self.fill_color.set(color.map_or(0, |x| x.to_pixel()));
-        self.canvas.invalidate();
-    }
-
-    pub fn set_stroke_color(&self, color: Option<&Color>) {
-        self.fill_color.set(color.map_or(0, |x| x.to_pixel()));
-        self.canvas.invalidate();
-    }
-}
-
 pub struct LauncherEntry {
     actor: Text,
 }
@@ -190,9 +99,10 @@ impl LauncherEntry {
     }
 }
 
-
 pub struct LauncherItem {
     rect: RoundedRect,
+    category_icon: Icon,
+    icon: Icon,
     name: Text,
     description: Text,
     active: Cell<bool>,
@@ -200,25 +110,46 @@ pub struct LauncherItem {
 
 impl LauncherItem {
     pub fn new(parent: &Actor, i: usize) -> Self {
-        let rect = RoundedRect::new(480 - 16, 48 - 4, 5.0, None, None);
+        let (w, h) = (480 - 16, 48 - 4);
+        let rect = RoundedRect::new(w, h, 5.0, None, None);
         rect.actor().set_position(8.0, 2.0 + i as f32 * 48.0);
         parent.add_child(rect.actor());
 
+        let mut x = 8.0;
+        let mut y = 6.0;
+
+        let category_icon_size = 16;
+        let category_icon = Icon::new(category_icon_size);
+        category_icon.actor().set_position(x, y + 8.0);
+        rect.actor().add_child(category_icon.actor());
+        x += category_icon_size as f32 + 8.0;
+
+        let icon_size = 32;
+        let icon = Icon::new(icon_size);
+        icon.actor().set_position(x, y);
+        rect.actor().add_child(icon.actor());
+        x += icon_size as f32 + 8.0;
+
+        let text_w = w as f32 - x - 8.0;
         let name = Text::new_full(Theme::font_name(), "", &Theme::color_text());
-        ActorExt::set_position(&name, 8.0, 6.0);
-        name.set_size(480.0 - 32.0, -1.0);
+        ActorExt::set_position(&name, x, y);
+        name.set_ellipsize(pango::EllipsizeMode::End);
+        name.set_size(text_w, -1.0);
         rect.actor().add_child(&name);
+        y += 16.0;
 
         let description = Text::new_full(Theme::small_font_name(), "", &Theme::color_text());
-        ActorExt::set_position(&description, 8.0, 22.0);
+        ActorExt::set_position(&description, x, y);
         description.set_ellipsize(pango::EllipsizeMode::End);
-        description.set_size(480.0 - 32.0, -1.0);
+        description.set_size(text_w, -1.0);
         rect.actor().add_child(&description);
 
         let active = Cell::new(false);
 
         Self {
             rect,
+            category_icon,
+            icon,
             name,
             description,
             active,
@@ -226,6 +157,8 @@ impl LauncherItem {
     }
 
     pub fn clear(&self) {
+        self.category_icon.clear();
+        self.icon.clear();
         self.name.set_text(None);
         self.description.set_text(None);
         self.active.set(false);
@@ -240,6 +173,16 @@ impl LauncherItem {
     }
 
     pub fn set(&self, result: &SearchResult) {
+        if let Some(IconSource::Name(icon_name)) = &result.category_icon {
+            self.category_icon.load(&icon_name);
+        } else {
+            self.category_icon.clear();
+        }
+        if let Some(IconSource::Name(icon_name)) = &result.icon {
+            self.icon.load(&icon_name);
+        } else {
+            self.icon.clear();
+        }
         self.name.set_text(Some(&result.name));
         self.description.set_text(Some(&result.description));
         self.active.set(true);
