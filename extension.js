@@ -461,7 +461,7 @@ function gnome_40_enable() {
 
 function gnome_40_disable() {
     // Horizontal workspaces
-    global.workspaceManager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
+    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
 }
 
 function init(metadata) {}
