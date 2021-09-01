@@ -137,10 +137,17 @@ function overlay_key_changed(settings) {
         overview_hide(overlay_key_action);
     }
 
-    if (overlay_key_is_disabled && !overlay_key_was_disabled) {
-        disconnect_overlay_key_handler();
-    } else if (!overlay_key_is_disabled && overlay_key_was_disabled) {
-        connect_overlay_key_handler(settings.get_enum("overlay-key-action"));
+    if (overlay_key_is_disabled) {
+        if (!overlay_key_was_disabled) {
+            disconnect_overlay_key_handler();
+        }
+    } else {
+        const action = settings.get_enum("overlay-key-action");
+        if (overlay_key_was_disabled) {
+            connect_overlay_key_handler(action);
+        } else {
+            overlay_key_action = action;
+        }
     }
 }
 
