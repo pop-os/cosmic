@@ -54,7 +54,7 @@ let indicatorPad = null;
 function clock_alignment(alignment) {
     // Clock Alignement breaks Date Menu, when other extensions like Dash2Panel are used
     let dash2Panel = Main.extensionManager.lookup("dash-to-panel@jderose9.github.com");
-    if(dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED){
+    if (dash2Panel && dash2Panel.state == ExtensionUtils.ExtensionState.ENABLED) {
         return;
     }
 
@@ -66,7 +66,7 @@ function clock_alignment(alignment) {
     const container = dateMenu.container;
     const parent = container.get_parent();
     if (parent != null) {
-        parent.remove_child (container);
+        parent.remove_child(container);
     }
 
     const banner_width = Main.panel.statusArea.dateMenu._messageList.width;
@@ -315,17 +315,17 @@ function page_changed() {
         }
 
         view.ease({
-           opacity: opacity,
-           duration: Overview.ANIMATION_TIME,
-           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            opacity: opacity,
+            duration: Overview.ANIMATION_TIME,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         });
     });
 }
 
 function page_empty() {
     getWorkspacesDisplay()._workspacesViews.forEach(view => {
-       if (Main.overview.dash.showAppsButton.checked && view._monitorIndex != Main.layoutManager.primaryIndex)
-           view.opacity = 0;
+        if (Main.overview.dash.showAppsButton.checked && view._monitorIndex != Main.layoutManager.primaryIndex)
+            view.opacity = 0;
     });
 }
 
@@ -333,7 +333,7 @@ function monitors_changed() {
     clock_alignment(settings.get_enum("clock-alignment"));
 }
 
-function init(metadata) {}
+function init(metadata) { }
 
 function enable() {
     // Raise first window on alt-tab
@@ -391,13 +391,13 @@ function enable() {
     }
 
     // Hide activities button
-    activities_signal_show = Main.panel.statusArea.activities.connect("show", function() {
+    activities_signal_show = Main.panel.statusArea.activities.connect("show", function () {
         Main.panel.statusArea.activities.hide();
     });
     Main.panel.statusArea.activities.hide();
 
     // Hide app menu
-    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function() {
+    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function () {
         Main.panel.statusArea.appMenu.hide();
     });
     Main.panel.statusArea.appMenu.hide();
@@ -513,7 +513,7 @@ function enable() {
 
                 // VERY IMPORTANT: This somehow removes the initial workspaces
                 // darkening. Not sure how, but it does.
-                if(background.content == undefined) {
+                if (background.content == undefined) {
                     // Shell version 3.36
                     background.vignette = false;
                     background.brightness = 1.0;
@@ -584,7 +584,7 @@ function disable() {
     Main.wm.removeKeybinding('toggle-application-view');
 
     let obj = GNOME_VERSION.startsWith("3.38") ? Main.overview.viewSelector
-                                               : Main.overview._overview._controls;
+        : Main.overview._overview._controls;
     Main.wm.addKeybinding(
         'toggle-application-view',
         new Gio.Settings({ schema_id: SHELL_KEYBINDINGS_SCHEMA }),
@@ -644,9 +644,9 @@ function disable() {
 
     // Remove injections
     let i;
-    for(i in injections) {
-       let injection = injections[i];
-       injection["object"][injection["parameter"]] = injection["value"];
+    for (i in injections) {
+        let injection = injections[i];
+        injection["object"][injection["parameter"]] = injection["value"];
     }
 
     clock_alignment(CLOCK_CENTER);
