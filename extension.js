@@ -405,9 +405,6 @@ function gnome_3_38_disable() {
 }
 
 function gnome_40_enable() {
-    // Vertical workspaces
-    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, true, -1, 1);
-
     // No overview at start-up
     if (Main.layoutManager._startingUp && Main.sessionMode.hasOverview) {
         inject(Main.sessionMode, "hasOverview", false);
@@ -415,30 +412,6 @@ function gnome_40_enable() {
             Main.sessionMode.hasOverview = true;
         });
     }
-
-    // Increase thumbnail size on primary monitor
-    inject(WorkspaceThumbnail, "MAX_THUMBNAIL_SCALE", 0.1);
-
-    // Increase thumbnail size on secondary monitors
-    inject(WorkspacesView.SecondaryMonitorDisplay.prototype, "_getThumbnailsHeight", function(box) {
-        if (!this._thumbnails.visible)
-            return 0;
-
-        const [width, height] = box.get_size();
-        const { expandFraction } = this._thumbnails;
-        const [thumbnailsHeight] = this._thumbnails.get_preferred_height(width);
-        return Math.min(
-            thumbnailsHeight * expandFraction,
-            height * WorkspaceThumbnail.MAX_THUMBNAIL_SCALE);
-    });
-
-    // Always show workspaces picker
-    inject(WorkspaceThumbnail.ThumbnailsBox.prototype, "_updateShouldShow", function () {
-        if (!this._shouldShow) {
-            this._shouldShow = true;
-            this.notify('should-show');
-        }
-    });
 
     // Exit from overview on Esc of applications view
     inject(Main.overview._overview._controls._searchController, '_onStageKeyPress', function (actor, event) {
@@ -459,10 +432,7 @@ function gnome_40_enable() {
     });
 }
 
-function gnome_40_disable() {
-    // Horizontal workspaces
-    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
-}
+function gnome_40_disable() {}
 
 function init(metadata) {}
 
