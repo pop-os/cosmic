@@ -291,6 +291,17 @@ function page_changed() {
            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         });
     });
+
+    if (global.vertical_overview && global.vertical_overview.bgManagers) {
+       global.vertical_overview.bgManagers.forEach(bgManager => {
+          let opacity = Main.overview.dash.showAppsButton.checked ? 0 : 255;
+          bgManager.backgroundActor.ease({
+              opacity: opacity,
+              duration: Overview.ANIMATION_TIME,
+              mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+          });
+       });
+    }
 }
 
 function page_empty() {
@@ -298,6 +309,11 @@ function page_empty() {
        if (Main.overview.dash.showAppsButton.checked && view._monitorIndex != Main.layoutManager.primaryIndex)
            view.opacity = 0;
     });
+    if (global.vertical_overview && global.vertical_overview.bgManagers && Main.overview.dash.showAppsButton.checked) {
+       global.vertical_overview.bgManagers.forEach(bgManager => {
+           bgManager.backgroundActor.opacity = 0;
+       });
+    }
 }
 
 function monitors_changed() {
