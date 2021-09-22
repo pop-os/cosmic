@@ -208,7 +208,8 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     display.add_keybinding("www", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
         if let Some(app_info) = AppInfo::default_for_uri_scheme("http") {
             //TODO: launch context?
-            match app_info.launch::<AppLaunchContext>(&[], None) {
+            let context: Option<&AppLaunchContext> = None;
+            match app_info.launch(&[], context) {
                 Ok(_) => (),
                 Err(err) => {
                     error!("failed to launch web browser: {}", err);

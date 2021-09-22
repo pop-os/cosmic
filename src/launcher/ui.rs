@@ -248,7 +248,8 @@ impl LauncherUi {
                         match DesktopAppInfo::from_filename(&path) {
                             Some(app_info) => {
                                 //TODO: launch context?
-                                match app_info.launch::<AppLaunchContext>(&[], None) {
+                                let context: Option<&AppLaunchContext> = None;
+                                match app_info.launch(&[], context) {
                                     Ok(_) => (),
                                     Err(err) => {
                                         error!("failed to launch entry {:?}: {}", path, err);
