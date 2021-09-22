@@ -1,0 +1,38 @@
+.cosmic-applications-dialog {
+	background-color: #36322f;
+}
+
+.cosmic-applications-box {
+	spacing: 12px;
+}
+
+.cosmic-applications-icon {
+	color: #9b9b9b;
+}
+
+.cosmic-applications-separator {
+	background: #000000;
+}
+
+.cosmic-app-display {
+}
+
+.cosmic-app-scroll-view {
+	height: 504px;  /* 168 * 3 */
+	width: 1176px; /* 168 * 7 */
+}
+
+.cosmic-applications-folder-title {
+	color: #ffffff;
+	font-weight: bold;
+	font-size: 1.5em;
+}
+
+.cosmic-app-icon {
+        height: 168px;
+        width: 168px;
+}
+
+.cosmic-base-folder-button {
+        width: 120px;
+}

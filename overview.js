@@ -1,7 +1,11 @@
+const ExtensionUtils = imports.misc.extensionUtils;
+const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const OverviewControls = imports.ui.overviewControls;
 
 const GNOME_VERSION = imports.misc.config.PACKAGE_VERSION;
+
+var applications = extension.imports.applications;
 
 function with_pop_shell(callback) {
     let pop_shell = Main.extensionManager.lookup("pop-shell@system76.com");
@@ -25,7 +29,9 @@ function overview_visible(kind) {
             }
         }
     } else if (kind == OVERVIEW_APPLICATIONS) {
-        if (Main.overview.visibleTarget) {
+        if (!GNOME_VERSION.startsWith("3.38")) {
+            return applications.visible();
+        } else if (Main.overview.visibleTarget) {
             if (Main.overview.dash.showAppsButton.checked) {
                 return true;
             }
@@ -58,10 +64,8 @@ function overview_show(kind) {
         if (GNOME_VERSION.startsWith("3.38")) {
             Main.overview.dash.showAppsButton.checked = true;
             Main.overview.show();
-        } else if (Main.overview.visible) {
-            Main.overview.dash.showAppsButton.checked = true;
         } else {
-            Main.overview.show(OverviewControls.ControlsState.APP_GRID);
+            applications.show();
         }
     } else if (kind == OVERVIEW_LAUNCHER) {
         Main.overview.hide();
@@ -80,6 +84,8 @@ function overview_hide(kind) {
         with_pop_shell((ext) => {
             ext.exit_modes();
         });
+    } else if (kind == OVERVIEW_APPLICATIONS && !GNOME_VERSION.startsWith("3.38")) {
+        applications.hide();
     } else {
         Main.overview.hide();
     }
