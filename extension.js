@@ -6,6 +6,7 @@ const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const Overview = imports.ui.overview;
 const OverviewControls = imports.ui.overviewControls;
+const Search = imports.ui.search;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
 const WorkspacesView = imports.ui.workspacesView;
@@ -13,6 +14,7 @@ const WorkspaceThumbnail = imports.ui.workspaceThumbnail;
 
 const GNOME_VERSION = imports.misc.config.PACKAGE_VERSION;
 
+var applications = extension.imports.applications;
 var { OVERVIEW_WORKSPACES, OVERVIEW_APPLICATIONS, OVERVIEW_LAUNCHER } = extension.imports.overview;
 var { overview_visible, overview_show, overview_hide, overview_toggle } = extension.imports.overview;
 var { CosmicTopBarButton } = extension.imports.topBarButton;
@@ -446,9 +448,25 @@ function gnome_40_enable() {
         }
         return Clutter.EVENT_PROPAGATE;
     });
+
+    applications.enable();
+
+    const appIcon_activate = AppDisplay.AppIcon.prototype.activate;
+    inject(AppDisplay.AppIcon.prototype, 'activate', function(button) {
+        appIcon_activate.call(this, button);
+        applications.hide();
+    });
+
+    const searchResult_activate = Search.SearchResult.prototype.activate;
+    inject(Search.SearchResult.prototype, 'activate', function() {
+        searchResult_activate.call(this);
+        applications.hide();
+    });
 }
 
-function gnome_40_disable() {}
+function gnome_40_disable() {
+    applications.disable();
+}
 
 function init(metadata) {}
 
