@@ -12,6 +12,9 @@ mod cosmic;
 pub use self::launcher::{LauncherIpc, LauncherUi};
 mod launcher;
 
+pub use self::theme::Theme;
+mod theme;
+
 pub use self::widget::{Icon, RoundedRect};
 mod widget;
 
