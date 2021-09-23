@@ -266,6 +266,11 @@ impl Cosmic {
                     -1,
                     1
                 );
+
+                // Make sure there are at least 2 workspaces
+                while workspace_manager.n_workspaces() < 2 {
+                    workspace_manager.append_new_workspace(false, Self::current_time(display));
+                }
             },
             None => error!("failed to find workspace manager"),
         }
