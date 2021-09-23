@@ -318,12 +318,10 @@ impl Cosmic {
 
         //TODO: put this somewhere else
         if let Some(ws_previews) = self.ws_previews.replace(None) {
-            stage.remove_child(ws_previews.rect.actor());
-
-            plugin.end_modal(Self::current_time(display));
+            for ws_monitor in ws_previews.monitors.iter() {
+                stage.remove_child(ws_monitor.rect.actor());
+            }
         } else {
-            plugin.begin_modal(ModalOptions::empty(), Self::current_time(display));
-
             let ws_previews = WsPreviews::new(&stage, plugin, display);
             self.ws_previews.replace(Some(ws_previews));
         }
