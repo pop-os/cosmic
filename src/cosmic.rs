@@ -322,7 +322,7 @@ impl Cosmic {
                 stage.remove_child(ws_monitor.rect.actor());
             }
         } else {
-            let ws_previews = WsPreviews::new(&stage, plugin, display);
+            let ws_previews = WsPreviews::new(&stage, plugin, display, &self.background_group);
             self.ws_previews.replace(Some(ws_previews));
         }
     }

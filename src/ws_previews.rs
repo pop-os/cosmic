@@ -10,6 +10,7 @@ use log::{
     error,
 };
 use meta::{
+    BackgroundGroup,
     Display,
     Plugin,
     Rectangle,
@@ -33,7 +34,14 @@ pub struct WsPreviewMonitor {
 }
 
 impl WsPreviewMonitor {
-    pub fn new(parent: &Actor, monitor_rect: Rectangle, active_workspace: i32, workspaces: &[Workspace], windows: &[Window]) -> Self {
+    pub fn new(
+        parent: &Actor,
+        monitor_rect: Rectangle,
+        active_workspace: i32,
+        workspaces: &[Workspace],
+        background_opt: Option<Actor>,
+        windows: &[Window]
+    ) -> Self {
         let border_radius = 5.0;
         let color_background = Theme::color_background();
         let color_border = Theme::color_border();
@@ -72,6 +80,7 @@ impl WsPreviewMonitor {
                 preview_h,
                 border_radius,
                 Some(&color_input),
+                //TODO: dynamically set border when active workspace changes
                 if i == active_workspace {
                     Some(&color_border)
                 } else {
@@ -83,6 +92,20 @@ impl WsPreviewMonitor {
                 ((preview_h + padding) * i + padding) as f32
             );
             rect.actor().add_child(preview.actor());
+
+            if let Some(background) = &background_opt {
+                let mini = Clone::new(background);
+                mini.set_position(
+                    ((background.x() as i32 - monitor_rect.x()) / scale + padding) as f32,
+                    ((background.y() as i32 - monitor_rect.y()) / scale + padding) as f32
+                );
+                mini.set_size(
+                    (background.width() as i32 / scale) as f32,
+                    (background.height() as i32 / scale) as f32
+                );
+                preview.actor().add_child(&mini);
+            }
+
             previews.push(preview);
         }
 
@@ -135,7 +158,7 @@ pub struct WsPreviews {
 }
 
 impl WsPreviews {
-    pub fn new(parent: &Actor, plugin: &Plugin, display: &Display) -> Rc<Self> {
+    pub fn new(parent: &Actor, plugin: &Plugin, display: &Display, background_group: &BackgroundGroup) -> Rc<Self> {
         let workspace_manager = display.workspace_manager().expect("WsPreviews could not find workspace manager");
         let active_workspace = workspace_manager.active_workspace_index();
 
@@ -153,6 +176,7 @@ impl WsPreviews {
                 display.monitor_geometry(monitor),
                 active_workspace,
                 &workspaces,
+                background_group.child_at_index(monitor),
                 &windows
             ));
         }
