@@ -41,12 +41,14 @@ use crate::{
     Direction,
     LauncherIpc,
     LauncherUi,
+    WsPreviews,
 };
 
 pub struct Cosmic {
     background_group: BackgroundGroup,
     launcher_ipc: RefCell<Option<LauncherIpc>>,
     launcher_ui: RefCell<Option<Rc<LauncherUi>>>,
+    ws_previews: RefCell<Option<Rc<WsPreviews>>>,
 }
 
 impl Cosmic {
@@ -62,6 +64,7 @@ impl Cosmic {
             background_group: BackgroundGroup::new(),
             launcher_ipc: RefCell::new(launcher_ipc),
             launcher_ui: RefCell::new(None),
+            ws_previews: RefCell::new(None),
         }
     }
 
@@ -311,6 +314,18 @@ impl Cosmic {
 
             let launcher_ui = LauncherUi::new(&stage, plugin, display);
             self.launcher_ui.replace(Some(launcher_ui));
+        }
+
+        //TODO: put this somewhere else
+        if let Some(ws_previews) = self.ws_previews.replace(None) {
+            stage.remove_child(ws_previews.rect.actor());
+
+            plugin.end_modal(Self::current_time(display));
+        } else {
+            plugin.begin_modal(ModalOptions::empty(), Self::current_time(display));
+
+            let ws_previews = WsPreviews::new(&stage, plugin, display);
+            self.ws_previews.replace(Some(ws_previews));
         }
     }
 }

@@ -18,6 +18,9 @@ mod theme;
 pub use self::widget::{Icon, RoundedRect};
 mod widget;
 
+pub use self::ws_previews::WsPreviews;
+mod ws_previews;
+
 mod wrapper;
 
 #[macro_export]
