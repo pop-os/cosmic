@@ -34,17 +34,18 @@ pub struct WsPreviewMonitor {
 
 impl WsPreviewMonitor {
     pub fn new(parent: &Actor, monitor_rect: Rectangle, active_workspace: i32, workspaces: &[Workspace], windows: &[Window]) -> Self {
+        let border_radius = 5.0;
         let color_background = Theme::color_background();
         let color_border = Theme::color_border();
         let color_input = Theme::color_input();
-
-        let scale = 8;
         let margin = 16;
         let padding = 8;
+        let scale = 8;
+
         let (parent_w, parent_h) = (monitor_rect.width(), monitor_rect.height());
         let (preview_w, preview_h) = (
-            parent_w / scale,
-            parent_h / scale
+            parent_w / scale + padding * 2,
+            parent_h / scale + padding * 2
         );
         let (rect_w, rect_h) = (
             preview_w + padding * 2,
@@ -54,7 +55,7 @@ impl WsPreviewMonitor {
         let rect = RoundedRect::new(
             rect_w,
             rect_h,
-            5.0,
+            border_radius,
             Some(&color_background),
             None
         );
@@ -69,7 +70,7 @@ impl WsPreviewMonitor {
             let preview = RoundedRect::new(
                 preview_w,
                 preview_h,
-                5.0,
+                border_radius,
                 Some(&color_input),
                 if i == active_workspace {
                     Some(&color_border)
@@ -110,8 +111,8 @@ impl WsPreviewMonitor {
                 if window.located_on_workspace(workspace) {
                     let mini = Clone::new(&window_actor);
                     mini.set_position(
-                        ((window_rect.x() - monitor_rect.x()) / scale) as f32,
-                        ((window_rect.y() - monitor_rect.y()) / scale) as f32
+                        ((window_rect.x() - monitor_rect.x()) / scale + padding) as f32,
+                        ((window_rect.y() - monitor_rect.y()) / scale + padding) as f32
                     );
                     mini.set_size(
                         (window_rect.width() / scale) as f32,
