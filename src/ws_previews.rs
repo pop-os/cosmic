@@ -1,6 +1,7 @@
 use clutter::{
     Actor,
     ActorExt,
+    AnimationMode,
     Clone,
 };
 use glib::{
@@ -36,6 +37,7 @@ use crate::{
 pub struct WsPreviewMonitor {
     pub rect: RoundedRect,
     previews: Vec<RoundedRect>,
+    active: RoundedRect,
 }
 
 impl WsPreviewMonitor {
@@ -85,12 +87,7 @@ impl WsPreviewMonitor {
                 preview_h,
                 border_radius,
                 Some(&color_input),
-                //TODO: dynamically set border when active workspace changes
-                if i == active_workspace {
-                    Some(&color_border)
-                } else {
-                    None
-                }
+                None
             );
             preview.actor().set_position(
                 padding as f32,
@@ -151,9 +148,34 @@ impl WsPreviewMonitor {
             }
         }
 
-        Self {
+        let active = RoundedRect::new(
+            preview_w,
+            preview_h,
+            border_radius,
+            None,
+            Some(&color_border)
+        );
+        rect.actor().add_child(active.actor());
+
+        let this = Self {
             rect,
             previews,
+            active,
+        };
+
+        this.update_workspace(active_workspace);
+        this.active.actor().set_easing_duration(150);
+        this.active.actor().set_easing_mode(AnimationMode::EaseOutQuad);
+
+        this
+    }
+
+    pub fn update_workspace(&self, active_workspace: i32) {
+        if let Some(preview) = self.previews.get(active_workspace as usize) {
+            self.active.actor().set_position(
+                preview.actor().x(),
+                preview.actor().y()
+            );
         }
     }
 }
@@ -200,15 +222,7 @@ impl WsPreviews {
             this.workspace_manager.connect_workspace_switched(move |_, from, to, direction| {
                 info!("from {} to {} dir {}", from, to, direction);
                 for monitor in that.monitors.iter() {
-                    for (i, preview) in monitor.previews.iter().enumerate() {
-                        if i as i32 == from {
-                            preview.set_stroke_color(None);
-                        }
-
-                        if i as i32 == to {
-                            preview.set_stroke_color(Some(&color_border));
-                        }
-                    }
+                    monitor.update_workspace(to);
                 }
             })
         };
