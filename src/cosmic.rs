@@ -297,6 +297,11 @@ impl Cosmic {
     }
 
     pub fn toggle_launcher(&self, plugin: &Plugin, display: &Display) {
+        // Close workspace previews if open
+        if self.ws_previews.borrow().is_some() {
+            self.toggle_ws_previews(plugin, display);
+        }
+
         let stage = match meta::functions::stage_for_display(&display) {
             Some(some) => some,
             None => {
@@ -318,6 +323,11 @@ impl Cosmic {
     }
 
     pub fn toggle_ws_previews(&self, plugin: &Plugin, display: &Display) {
+        // Close launcher if open
+        if self.launcher_ui.borrow().is_some() {
+            self.toggle_launcher(plugin, display);
+        }
+
         let stage = match meta::functions::stage_for_display(&display) {
             Some(some) => some,
             None => {
