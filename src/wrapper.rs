@@ -193,63 +193,81 @@ pub extern "C" fn cosmic_plugin_start(plugin: *mut MetaPlugin) {
     }
 
     //TODO: make gnome-settings-daemon media-keys function on its own
-    let settings = Settings::new("org.gnome.settings-daemon.plugins.media-keys");
-    display.add_keybinding("terminal", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
-        let settings = Settings::new("org.gnome.desktop.default-applications.terminal");
-        let command = settings.string("exec");
-        //TODO: launch context, launch with AppInfo::create_from_commandline
-        match Subprocess::newv(&[OsStr::new(&command)], SubprocessFlags::NONE) {
-            Ok(_subprocess) => (),
-            Err(err) => {
-                error!("failed to launch terminal {:?}: {}", command, err);
-            }
-        }
-    });
-    display.add_keybinding("www", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
-        if let Some(app_info) = AppInfo::default_for_uri_scheme("http") {
-            //TODO: launch context?
-            let context: Option<&AppLaunchContext> = None;
-            match app_info.launch(&[], context) {
-                Ok(_) => (),
+    {
+        let settings = Settings::new("org.gnome.settings-daemon.plugins.media-keys");
+        display.add_keybinding("terminal", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
+            let settings = Settings::new("org.gnome.desktop.default-applications.terminal");
+            let command = settings.string("exec");
+            //TODO: launch context, launch with AppInfo::create_from_commandline
+            match Subprocess::newv(&[OsStr::new(&command)], SubprocessFlags::NONE) {
+                Ok(_subprocess) => (),
                 Err(err) => {
-                    error!("failed to launch web browser: {}", err);
-                },
+                    error!("failed to launch terminal {:?}: {}", command, err);
+                }
             }
-        }
-    });
+        });
+        display.add_keybinding("www", &settings, KeyBindingFlags::NONE, |_display, _window, _key_event, _key_binding| {
+            if let Some(app_info) = AppInfo::default_for_uri_scheme("http") {
+                //TODO: launch context?
+                let context: Option<&AppLaunchContext> = None;
+                match app_info.launch(&[], context) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        error!("failed to launch web browser: {}", err);
+                    },
+                }
+            }
+        });
+    }
 
-    let settings = Settings::new("org.gnome.shell.extensions.pop-shell");
+    //TODO: make these cosmic settings instead of gnome-shell
     {
-        let plugin = plugin.clone();
-        display.add_keybinding("focus-left", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
-            with_cosmic(&plugin, |cosmic| {
-                cosmic.focus_direction(display, Direction::Left);
+        let settings = Settings::new("org.gnome.shell.keybindings");
+        {
+            let plugin = plugin.clone();
+            display.add_keybinding("toggle-overview", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
+                with_cosmic(&plugin, |cosmic| {
+                    cosmic.toggle_ws_previews(&plugin, display);
+                });
             });
-        });
+        }
     }
+
+    //TODO: make these cosmic settings instead of pop-shell
     {
-        let plugin = plugin.clone();
-        display.add_keybinding("focus-right", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
-            with_cosmic(&plugin, |cosmic| {
-                cosmic.focus_direction(display, Direction::Right);
+        let settings = Settings::new("org.gnome.shell.extensions.pop-shell");
+        {
+            let plugin = plugin.clone();
+            display.add_keybinding("focus-left", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
+                with_cosmic(&plugin, |cosmic| {
+                    cosmic.focus_direction(display, Direction::Left);
+                });
             });
-        });
-    }
-    {
-        let plugin = plugin.clone();
-        display.add_keybinding("focus-up", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
-            with_cosmic(&plugin, |cosmic| {
-                cosmic.focus_direction(display, Direction::Up);
+        }
+        {
+            let plugin = plugin.clone();
+            display.add_keybinding("focus-right", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
+                with_cosmic(&plugin, |cosmic| {
+                    cosmic.focus_direction(display, Direction::Right);
+                });
             });
-        });
-    }
-    {
-        let plugin = plugin.clone();
-        display.add_keybinding("focus-down", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
-            with_cosmic(&plugin, |cosmic| {
-                cosmic.focus_direction(display, Direction::Down);
+        }
+        {
+            let plugin = plugin.clone();
+            display.add_keybinding("focus-up", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
+                with_cosmic(&plugin, |cosmic| {
+                    cosmic.focus_direction(display, Direction::Up);
+                });
             });
-        });
+        }
+        {
+            let plugin = plugin.clone();
+            display.add_keybinding("focus-down", &settings, KeyBindingFlags::NONE, move |display, _window, _key_event, _key_binding| {
+                with_cosmic(&plugin, |cosmic| {
+                    cosmic.focus_direction(display, Direction::Down);
+                });
+            });
+        }
     }
 }
 

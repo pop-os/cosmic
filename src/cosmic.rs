@@ -315,13 +315,26 @@ impl Cosmic {
             let launcher_ui = LauncherUi::new(&stage, plugin, display);
             self.launcher_ui.replace(Some(launcher_ui));
         }
+    }
 
-        //TODO: put this somewhere else
+    pub fn toggle_ws_previews(&self, plugin: &Plugin, display: &Display) {
+        let stage = match meta::functions::stage_for_display(&display) {
+            Some(some) => some,
+            None => {
+                error!("failed to find display stage");
+                return;
+            }
+        };
+
         if let Some(ws_previews) = self.ws_previews.replace(None) {
             for ws_monitor in ws_previews.monitors.iter() {
                 stage.remove_child(ws_monitor.rect.actor());
             }
+
+            plugin.end_modal(Self::current_time(display));
         } else {
+            plugin.begin_modal(ModalOptions::empty(), Self::current_time(display));
+
             let ws_previews = WsPreviews::new(&stage, plugin, display, &self.background_group);
             self.ws_previews.replace(Some(ws_previews));
         }
