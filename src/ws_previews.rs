@@ -5,9 +5,12 @@ use clutter::{
 };
 use glib::{
     Cast,
+    ObjectExt,
+    SignalHandlerId,
 };
 use log::{
     error,
+    info,
 };
 use meta::{
     BackgroundGroup,
@@ -18,8 +21,10 @@ use meta::{
     Window,
     WindowActor,
     Workspace,
+    WorkspaceManager,
 };
 use std::{
+    cell::RefCell,
     rc::Rc,
 };
 
@@ -155,6 +160,8 @@ impl WsPreviewMonitor {
 
 pub struct WsPreviews {
     pub monitors: Vec<WsPreviewMonitor>,
+    workspace_manager: WorkspaceManager,
+    workspace_switched_id: RefCell<Option<SignalHandlerId>>,
 }
 
 impl WsPreviews {
@@ -180,8 +187,42 @@ impl WsPreviews {
                 &windows
             ));
         }
-        Rc::new(Self {
+
+        let mut this = Rc::new(Self {
             monitors,
-        })
+            workspace_manager,
+            workspace_switched_id: RefCell::new(None),
+        });
+
+        let workspace_switched_id = {
+            let color_border = Theme::color_border();
+            let that = this.clone();
+            this.workspace_manager.connect_workspace_switched(move |_, from, to, direction| {
+                info!("from {} to {} dir {}", from, to, direction);
+                for monitor in that.monitors.iter() {
+                    for (i, preview) in monitor.previews.iter().enumerate() {
+                        if i as i32 == from {
+                            preview.set_stroke_color(None);
+                        }
+
+                        if i as i32 == to {
+                            preview.set_stroke_color(Some(&color_border));
+                        }
+                    }
+                }
+            })
+        };
+
+        this.workspace_switched_id.replace(Some(workspace_switched_id));
+
+        this
+    }
+}
+
+impl Drop for WsPreviews {
+    fn drop(&mut self) {
+        if let Some(workspace_switched_id) = self.workspace_switched_id.replace(None) {
+            self.workspace_manager.disconnect(workspace_switched_id);
+        }
     }
 }

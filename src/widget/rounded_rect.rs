@@ -103,7 +103,7 @@ impl RoundedRect {
     }
 
     pub fn set_stroke_color(&self, color: Option<&Color>) {
-        self.fill_color.set(color.map_or(0, |x| x.to_pixel()));
+        self.stroke_color.set(color.map_or(0, |x| x.to_pixel()));
         self.canvas.invalidate();
     }
 }
