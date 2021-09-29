@@ -16,7 +16,6 @@ use log::{
 use meta::{
     BackgroundGroup,
     Display,
-    Plugin,
     Rectangle,
     TabList,
     Window,
@@ -30,6 +29,7 @@ use std::{
 };
 
 use crate::{
+    CosmicPlugin,
     RoundedRect,
     Theme,
 };
@@ -187,7 +187,7 @@ pub struct WsPreviews {
 }
 
 impl WsPreviews {
-    pub fn new(parent: &Actor, plugin: &Plugin, display: &Display, background_group: &BackgroundGroup) -> Rc<Self> {
+    pub fn new(parent: &Actor, plugin: &CosmicPlugin, display: &Display, background_group: &BackgroundGroup) -> Rc<Self> {
         let workspace_manager = display.workspace_manager().expect("WsPreviews could not find workspace manager");
         let active_workspace = workspace_manager.active_workspace_index();
 

@@ -25,7 +25,6 @@ WM_BIN_PATH=target/$(TARGET)/$(WM_BIN)
 WM_SRC=\
 	Cargo.toml \
 	Cargo.lock \
-	build.rs \
 	$(shell find src -type f -wholename '*src/*.rs')
 
 PANEL_BIN=pop-cosmic-panel
@@ -61,19 +60,7 @@ vendor:
 	tar pcfJ vendor.tar.xz vendor
 	rm -rf vendor
 
-target/wrapper/wrapper.h: src/wrapper.rs cbindgen.toml
-	mkdir -p target/wrapper
-	cbindgen --config cbindgen.toml --output $@ $<
-	touch $@
-
-target/wrapper/wrapper.o: src/wrapper.c target/wrapper/wrapper.h
-	$(CC) -c $< -o $@ -Itarget/wrapper -Werror \
-		$(shell pkg-config --cflags --libs libmutter-8)
-
-target/wrapper/libwrapper.a: target/wrapper/wrapper.o
-	ar -rc $@ $^
-
-$(WM_BIN_PATH): $(WM_SRC) target/wrapper/libwrapper.a
+$(WM_BIN_PATH): $(WM_SRC)
 ifeq ($(VENDORED),1)
 	tar pxf vendor.tar.xz
 endif

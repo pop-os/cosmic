@@ -22,7 +22,6 @@ use meta::{
     DisplayCorner,
     KeyBinding,
     ModalOptions,
-    Plugin,
     PluginExt,
     TabList,
     WindowActor,
@@ -38,6 +37,7 @@ use std::{
 };
 
 use crate::{
+    CosmicPlugin,
     Direction,
     LauncherIpc,
     LauncherUi,
@@ -208,12 +208,12 @@ impl Cosmic {
         }
     }
 
-    pub fn keybinding_filter(&self, plugin: &Plugin, key_binding: &mut KeyBinding) -> bool {
+    pub fn keybinding_filter(&self, plugin: &CosmicPlugin, key_binding: &KeyBinding) -> bool {
         info!("key_binding {:?} builtin {}", key_binding.name(), key_binding.is_builtin());
         false
     }
 
-    pub fn map(&self, plugin: &Plugin, actor: &WindowActor) {
+    pub fn map(&self, plugin: &CosmicPlugin, actor: &WindowActor) {
         if let Some(window) = actor.meta_window() {
             let display = match plugin.display() {
                 Some(some) => some,
@@ -296,7 +296,7 @@ impl Cosmic {
         }
     }
 
-    pub fn toggle_launcher(&self, plugin: &Plugin, display: &Display) {
+    pub fn toggle_launcher(&self, plugin: &CosmicPlugin, display: &Display) {
         // Close workspace previews if open
         if self.ws_previews.borrow().is_some() {
             self.toggle_ws_previews(plugin, display);
@@ -322,7 +322,7 @@ impl Cosmic {
         }
     }
 
-    pub fn toggle_ws_previews(&self, plugin: &Plugin, display: &Display) {
+    pub fn toggle_ws_previews(&self, plugin: &CosmicPlugin, display: &Display) {
         // Close launcher if open
         if self.launcher_ui.borrow().is_some() {
             self.toggle_launcher(plugin, display);

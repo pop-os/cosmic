@@ -1,7 +1,6 @@
 use clutter::{
     Actor,
     ActorExt,
-    Color,
     Text,
     TextExt,
 };
@@ -21,7 +20,6 @@ use log::{
 };
 use meta::{
     Display,
-    Plugin,
 };
 use pop_launcher::{
     IconSource,
@@ -35,10 +33,10 @@ use std::{
 };
 
 use crate::{
+    CosmicPlugin,
     Icon,
     RoundedRect,
     Theme,
-    wrapper::with_cosmic,
 };
 
 pub struct LauncherEntry {
@@ -166,7 +164,7 @@ pub struct LauncherUi {
 }
 
 impl LauncherUi {
-    pub fn new(parent: &Actor, plugin: &Plugin, display: &Display) -> Rc<Self> {
+    pub fn new(parent: &Actor, plugin: &CosmicPlugin, display: &Display) -> Rc<Self> {
         let (w, h) = (480, 440);
         let (parent_w, parent_h) = parent.size();
         let x = (parent_w - w as f32) / 2.0;
@@ -205,33 +203,33 @@ impl LauncherUi {
             let display = display.clone();
             let this = ret.clone();
             ret.entry.actor.connect_activate(move |_entry_actor| {
-                with_cosmic(&plugin, |cosmic| {
-                    let selected = this.selected.get();
-                    info!("activate {}", selected);
-                    let response_res = cosmic.launcher_request(
-                        Request::Activate(selected as pop_launcher::Indice)
-                    );
-                    info!("response: {:#?}", response_res);
-                    if let Ok(Response::DesktopEntry { path, .. }) = response_res {
-                        //TODO: gpu_preference
-                        match DesktopAppInfo::from_filename(&path) {
-                            Some(app_info) => {
-                                //TODO: launch context?
-                                let context: Option<&AppLaunchContext> = None;
-                                match app_info.launch(&[], context) {
-                                    Ok(_) => (),
-                                    Err(err) => {
-                                        error!("failed to launch entry {:?}: {}", path, err);
-                                    },
-                                }
-                            },
-                            None => error!("failed to load entry {:?}", path),
-                        }
-                    }
+                let cosmic = plugin.cosmic();
 
-                    // Close launcher on enter
-                    cosmic.toggle_launcher(&plugin, &display);
-                });
+                let selected = this.selected.get();
+                info!("activate {}", selected);
+                let response_res = cosmic.launcher_request(
+                    Request::Activate(selected as pop_launcher::Indice)
+                );
+                info!("response: {:#?}", response_res);
+                if let Ok(Response::DesktopEntry { path, .. }) = response_res {
+                    //TODO: gpu_preference
+                    match DesktopAppInfo::from_filename(&path) {
+                        Some(app_info) => {
+                            //TODO: launch context?
+                            let context: Option<&AppLaunchContext> = None;
+                            match app_info.launch(&[], context) {
+                                Ok(_) => (),
+                                Err(err) => {
+                                    error!("failed to launch entry {:?}: {}", path, err);
+                                },
+                            }
+                        },
+                        None => error!("failed to load entry {:?}", path),
+                    }
+                }
+
+                // Close launcher on enter
+                cosmic.toggle_launcher(&plugin, &display);
             });
         }
 
@@ -244,25 +242,23 @@ impl LauncherUi {
                 match Key::new(key_event.evdev_code as u16) {
                     Key::KEY_ESC => {
                         // Close launcher on escape
-                        with_cosmic(&plugin, |cosmic| {
-                            cosmic.toggle_launcher(&plugin, &display);
-                        });
+                        plugin.cosmic().toggle_launcher(&plugin, &display);
                         true
                     },
                     Key::KEY_TAB => {
-                        with_cosmic(&plugin, |cosmic| {
-                            let selected = this.selected.get();
-                            info!("complete {}", selected);
-                            let response_res = cosmic.launcher_request(
-                                Request::Complete(selected as pop_launcher::Indice)
-                            );
-                            info!("response: {:#?}", response_res);
-                            if let Ok(Response::Fill(text)) = response_res {
-                                this.selected.set(0);
-                                // Automatically runs search again
-                                entry_actor.set_text(Some(&text));
-                            }
-                        });
+                        let cosmic = plugin.cosmic();
+
+                        let selected = this.selected.get();
+                        info!("complete {}", selected);
+                        let response_res = cosmic.launcher_request(
+                            Request::Complete(selected as pop_launcher::Indice)
+                        );
+                        info!("response: {:#?}", response_res);
+                        if let Ok(Response::Fill(text)) = response_res {
+                            this.selected.set(0);
+                            // Automatically runs search again
+                            entry_actor.set_text(Some(&text));
+                        }
                         true
                     },
                     Key::KEY_UP => {
@@ -283,19 +279,19 @@ impl LauncherUi {
             let plugin = plugin.clone();
             let this = ret.clone();
             ret.entry.actor.connect_text_changed(move |entry_actor| {
-                with_cosmic(&plugin, |cosmic| {
-                    this.clear();
-                    if let Some(text) = entry_actor.text() {
-                        info!("search {}", text);
-                        let response_res = cosmic.launcher_request(
-                            Request::Search(text.to_string())
-                        );
-                        info!("response: {:#?}", response_res);
-                        if let Ok(Response::Update(results)) = response_res {
-                            this.set(&results);
-                        }
+                let cosmic = plugin.cosmic();
+
+                this.clear();
+                if let Some(text) = entry_actor.text() {
+                    info!("search {}", text);
+                    let response_res = cosmic.launcher_request(
+                        Request::Search(text.to_string())
+                    );
+                    info!("response: {:#?}", response_res);
+                    if let Ok(Response::Update(results)) = response_res {
+                        this.set(&results);
                     }
-                });
+                }
             });
         }
 

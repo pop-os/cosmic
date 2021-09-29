@@ -1,3 +1,7 @@
+use glib::{
+    prelude::*,
+    translate::IntoGlib,
+};
 use std::{
     env,
     ffi::CString,
@@ -21,6 +25,7 @@ mod widget;
 pub use self::ws_previews::WsPreviews;
 mod ws_previews;
 
+pub use self::wrapper::CosmicPlugin;
 mod wrapper;
 
 #[macro_export]
@@ -66,7 +71,7 @@ pub fn run() {
         glib_sys::g_option_context_free(ctx);
 
         // Run mutter
-        meta_sys::meta_plugin_manager_set_plugin_type(wrapper::cosmic_plugin_get_type());
+        meta_sys::meta_plugin_manager_set_plugin_type(CosmicPlugin::static_type().into_glib());
         meta_sys::meta_set_wm_name(c_str!("COSMIC"));
         meta_sys::meta_init();
         meta_sys::meta_register_with_session();
