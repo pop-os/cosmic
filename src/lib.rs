@@ -1,7 +1,4 @@
-use glib::{
-    prelude::*,
-    translate::IntoGlib,
-};
+use glib::prelude::*;
 use std::{
     env,
     ffi::CString,
@@ -71,10 +68,10 @@ pub fn run() {
         glib_sys::g_option_context_free(ctx);
 
         // Run mutter
-        meta_sys::meta_plugin_manager_set_plugin_type(CosmicPlugin::static_type().into_glib());
-        meta_sys::meta_set_wm_name(c_str!("COSMIC"));
-        meta_sys::meta_init();
-        meta_sys::meta_register_with_session();
-        process::exit(meta_sys::meta_run());
+        meta::Plugin::manager_set_plugin_type(CosmicPlugin::static_type());
+        meta::set_wm_name("COSMIC");
+        meta::init();
+        meta::register_with_session();
+        process::exit(meta::run());
     }
 }
