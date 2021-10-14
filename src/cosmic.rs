@@ -257,8 +257,11 @@ impl Cosmic {
     }
 
     pub fn start(&self, display: &Display) {
-        // We use GTK to supply icons, it must be initialized when mutter is ready
-        gtk::init().expect("failed to initialize gtk");
+        // We use GTK to supply icons. `gtk::init` deadlocks when run in a
+        // Wayland compositor. Just pretend it is initialized, so gtk-rs
+        // won't panic. This is like Gnome Shell, but could probably cause
+        // UB with random gtk calls.
+        unsafe { gtk::set_initialized() };
 
         match display.workspace_manager() {
             Some(workspace_manager) => {
