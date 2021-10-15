@@ -29,9 +29,8 @@ function buildPrefsWidget() {
         halign: Gtk.Align.CENTER,
         valign: Gtk.Align.CENTER,
     });
-    box.add(label);
-    box.add(button);
-    box.show_all();
+    box.append(label);
+    box.append(button);
 
     return box;
 }
