@@ -4,8 +4,8 @@ Computer Operating System Main Interface Components
 
 COSMIC is the name for the main shell components in Pop_Shell (separate from the tiling and window-management components). It makes the following changes to the standard GNOME Shell environment:
 
-* [Dock](https://github.com/pop-os/gnome-shell-extension-ubuntu-dock)
-* [Multi-Monitor improvements](https://github.com/pop-os/gnome-shell-extension-multi-monitors)
+* [Dock](https://github.com/pop-os/cosmic-dock)
+* [Workspaces](https://github.com/pop-os/cosmic-workspaces)
 * [Configuration options](https://github.com/pop-os/desktop-widget)
 * Separated Workspaces overview from Applications.
 
@@ -22,14 +22,14 @@ COSMIC requires the following components:
 
 ## Installation
 
-The recommended way to install COSMIC is through the package manager on Pop_OS. To install COSMIC on Pop_OS 21.04 and higher:
+The recommended way to install COSMIC is through the package manager on Pop!_OS. To install COSMIC on Pop!_OS 21.04 and higher:
 
 ```
 sudo apt update
-sudo apt install pop-cosmic libpop-desktop-widget gnome-shell-extension-ubuntu-dock gnome-shell-extension-multi-monitors
+sudo apt install pop-cosmic libpop-desktop-widget gnome-shell-extension-cosmic-dock gnome-shell-extension-cosmic-workspaces
 ```
 
-Next restart GNOME Shell using Alt+F2, type `r`, and press Enter. Then enable the "Ubuntu Dock", "Multi-Monitors Add On", and "Pop COSMIC" extensions in GNOME Extensions or GNOME Tweaks. You will also need to enable "Pop Shell" if it is not enabled.
+Next restart GNOME Shell using Alt+F2, type `r`, and press Enter. Then enable the "Cosmic Dock", "Cosmic Workspaces", and "Pop COSMIC" extensions in GNOME Extensions or GNOME Tweaks. You will also need to enable "Pop Shell" if it is not enabled.
 
 ### Installation from Source
 
@@ -39,7 +39,7 @@ The following COSMIC components need to be installed separately:
 
 * [COSMIC Desktop Widget](https://github.com/pop-os/desktop-widget)
 * [COSMIC Dock](https://github.com/pop-os/gnome-shell-extension-ubuntu-dock)
-* [COSMIC Multi-Monitors](https://github.com/pop-os/gnome-shell-extension-multi-monitors)
+* [COSMIC Workspaces](https://github.com/pop-os/cosmic-workspaces)
 
 Following that, install COSMIC from source:
 
@@ -50,7 +50,7 @@ make && make install
 ```
 
 ##### Note
-Use of `sudo` is not required or recommended for COSMIC.
+Use of `sudo` is not required nor recommended for COSMIC.
 
 ## Removal
 
@@ -61,4 +61,4 @@ rm -r ~/.local/share/gnome-shell/extensions/pop-cosmic@system76.com
 ```
 
 ## License
-COSMIC is available under the terms of the GNU General Public License Version 3. For full license terms, see the file `LICENSE`.
+COSMIC is available under the terms of the GNU General Public License Version 3. For full license terms, see [LICENSE](./LICENSE).
