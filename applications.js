@@ -746,6 +746,7 @@ var CosmicSearchResultsView = GObject.registerClass({
         // TODO: scroll
 
         this._cancellable = new Gio.Cancellable();
+        this._searchTimeoutId = 0;
 
         this._providers = [];
         this._terms = [];
@@ -777,24 +778,28 @@ var CosmicSearchResultsView = GObject.registerClass({
         const searchString = terms.join(' ');
         const previousSearchString = this._terms.join(' ');
 
-        // TODO
-        this._terms = terms;
-        this.emit('terms-changed');
-
-        this._cancellable.cancel();
-        this._cancellable.reset();
-
-        // TODO timer
-
         let isSubSearch = false;
         if (this._terms.length > 0)
             isSubSearch = searchString.indexOf(previousSearchString) == 0;
 
+        this._terms = terms;
+        this._isSubSearch = isSubSearch;
+
+        this._cancellable.cancel();
+        this._cancellable.reset();
+
+        if (this._searchTimeoutId == 0)
+            this._searchTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, this._onSearchTimeout.bind(this));
+
+        this.emit('terms-changed');
+    }
+
+    _doSearch() {
         this._providers.forEach(provider => {
             provider.searchInProgress = true;
 
             const previousProviderResults = this._results[provider.id];
-            if (isSubSearch && previousProviderResults) {
+            if (this._isSubSearch && previousProviderResults) {
                 provider.getSubsearchResultSet(previousProviderResults,
                                                this._terms,
                                                results => {
@@ -809,6 +814,12 @@ var CosmicSearchResultsView = GObject.registerClass({
                                              this._cancellable);
             }
         });
+    }
+
+    _onSearchTimeout() {
+        this._searchTimeoutId = 0;
+        this._doSearch();
+        return GLib.SOURCE_REMOVE;
     }
 
     _gotResults(results, provider) {
