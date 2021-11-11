@@ -36,3 +36,12 @@
 .cosmic-base-folder-button {
         width: 120px;
 }
+
+.cosmic-applications-available {
+	color: #ffffff;
+	font-weight: bold;
+}
+
+.cosmic-applications-search-results {
+	spacing: 32px;
+}

@@ -741,6 +741,7 @@ var CosmicSearchResultsView = GObject.registerClass({
             name: 'searchResultsContent',
             vertical: true,
             x_expand: true,
+	    style_class: 'cosmic-applications-search-results',
         });
         this.add_actor(this._content);
         // TODO: scroll
@@ -758,12 +759,15 @@ var CosmicSearchResultsView = GObject.registerClass({
         provider.display = providerDisplay;
         this._providers.push(provider);
 
+        const available_label = new St.Label({ text: "Available to Install", style_class: "cosmic-applications-available" });
+	this._content.add(available_label);
+
         const appInfo = Gio.DesktopAppInfo.new("io.elementary.appcenter.desktop");
         const busName = "io.elementary.appcenter";
         const objectPath = "/io/elementary/appcenter/SearchProvider";
         if (appInfo) {
             const provider = new RemoteSearchProvider2(appInfo, busName, objectPath, true);
-            const providerDisplay = new Search.ListSearchResults(provider, this);
+            const providerDisplay = new Search.GridSearchResults(provider, this);
             this._content.add(providerDisplay)
             provider.display = providerDisplay;
             this._providers.push(provider);
