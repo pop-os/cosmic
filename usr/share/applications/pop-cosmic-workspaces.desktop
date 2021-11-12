@@ -2,6 +2,7 @@
 Name=Show Workspaces
 Name[pt_BR]=Mostrar Áreas de Trabalho
 Name[es_ES]=Mostrar Áreas de Trabajo
+Name[pl_PL]=Pokaż obszary robocze
 Exec=dbus-send --session --dest=org.gnome.Shell --type=method_call /org/gnome/Shell org.gnome.Shell.Eval string:'let pop_cosmic = Main.extensionManager.lookup("pop-cosmic@system76.com"); if (pop_cosmic) { pop_cosmic.stateObj.overview_toggle(pop_cosmic.stateObj.OVERVIEW_WORKSPACES); }'
 Icon=pop-cosmic-workspaces
 Type=Application
