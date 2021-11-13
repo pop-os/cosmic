@@ -45,3 +45,11 @@
 .cosmic-applications-search-results {
 	spacing: 32px;
 }
+
+.cosmic-folder-edit-dialog {
+	min-width: 512px;
+}
+
+.cosmic-folder-edit-dialog .message-dialog-description {
+	text-align: left;
+}

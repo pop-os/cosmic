@@ -1,6 +1,7 @@
 const { Clutter, Gio, GLib, GObject, Pango, Shell, St } = imports.gi;
 const AppDisplay = imports.ui.appDisplay;
 const { BaseIcon } = imports.ui.iconGrid;
+const Dialog = imports.ui.dialog;
 const DND = imports.ui.dnd;
 const { ExtensionState } = imports.misc.extensionUtils;
 const Main = imports.ui.main;
@@ -17,20 +18,16 @@ let dialog = null;
 
 var CosmicFolderEditDialog = GObject.registerClass({
 }, class CosmicFolderEditDialog extends ModalDialog {
-    _init(title, acceptText, hasEntry, onAccept) {
+    _init(title, description, acceptText, hasEntry, onAccept) {
         super._init();
+        this.dialogLayout._dialog.add_style_class_name('cosmic-folder-edit-dialog');
 
-        const box = new St.BoxLayout({ vertical: true });
-        this.contentLayout.add(box);
-
-        if (title !== null) {
-            const label = new St.Label({ text: title });
-            box.add_actor(label);
-        }
+        const contentBox = new Dialog.MessageDialogContent({ title, description });
+        this.contentLayout.add_child(contentBox);
 
         if (hasEntry) {
             this._entry = new St.Entry();
-            box.add_actor(this._entry);
+            contentBox.add_actor(this._entry);
         }
 
         this.addButton({
@@ -700,7 +697,7 @@ var CosmicAppDisplay = GObject.registerClass({
     }
 
     open_create_folder_dialog() {
-        new CosmicFolderEditDialog(null, "Create", true, (dialog) => {
+        new CosmicFolderEditDialog("New Folder", "Folder Name", "Create", true, (dialog) => {
             this.create_folder(dialog.entry.get_text());
         });
     }
@@ -708,7 +705,8 @@ var CosmicAppDisplay = GObject.registerClass({
     open_delete_folder_dialog() {
         const id = this.folder.id;
 
-        new CosmicFolderEditDialog("Delete folder?", "Delete", false, (dialog) => {
+        const desc = "Deleting this folder will move the application icons to Library Home.";
+        new CosmicFolderEditDialog("Delete Folder?", desc, "Delete", false, (dialog) => {
             this.delete_folder(id);
             this.setFolder(null);
         });
@@ -722,7 +720,7 @@ var CosmicAppDisplay = GObject.registerClass({
 
         const name = this._folders[id].name;
 
-        const dialog = new CosmicFolderEditDialog(null, "Rename", true, (dialog) => {
+        const dialog = new CosmicFolderEditDialog("Rename Folder", null, "Rename", true, (dialog) => {
             this.rename_folder(id, dialog.entry.get_text());
         });
         dialog.entry.set_text(name);
