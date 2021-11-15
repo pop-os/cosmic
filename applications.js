@@ -160,7 +160,7 @@ var CosmicFolderButton = GObject.registerClass({
     }
 
     get name() {
-        return this.label.text;
+        return this._name;
     }
 
     _updateApps() {
@@ -196,20 +196,18 @@ var CosmicFolderButton = GObject.registerClass({
     }
 
     _updateName() {
-        let name;
-
         if (this.settings === null) {
-            name = 'Library Home';
+            this._name = 'Library Home';
         } else {
-            name = this.settings.get_string('name');
+            this._name = this.settings.get_string('name');
             if (this.settings.get_boolean('translate')) {
-                const translated = Shell.util_get_translated_folder_name(name);
+                const translated = Shell.util_get_translated_folder_name(this._name);
                 if (translated !== null)
-                    name = translated;
+                    this._name = translated;
             }
         }
 
-        this.label.text = name;
+        this.label.text = this._name || 'Untitled';
         this.notify('name');
     }
 
