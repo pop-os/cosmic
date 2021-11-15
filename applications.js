@@ -946,6 +946,9 @@ var CosmicAppsDialog = GObject.registerClass({
         this.open();
         this._header.reset();
         this.appDisplay.reset();
+
+        // Update 'checked' state of Applications button
+        Main.panel.statusArea['cosmic_applications'].update();
     }
 
     hideDialog() {
@@ -955,6 +958,9 @@ var CosmicAppsDialog = GObject.registerClass({
         if (cosmicDock && cosmicDock.state === ExtensionState.ENABLED) {
             cosmicDock.stateObj.dockManager._allDocks.forEach((dock) => dock._onOverviewHiding());
         }
+
+        // Update 'checked' state of Applications button
+        Main.panel.statusArea['cosmic_applications'].update();
     }
 });
 
