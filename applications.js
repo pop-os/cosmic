@@ -430,9 +430,10 @@ var CosmicModalDialog = GObject.registerClass({
         // doesn't work properly, since part of the dock is blocked by
         // `modalDialogGroup`, which has the size of the dialog but at the
         // top left.
-        const modalDialogGroup = Main.layoutManager.modalDialogGroup;
-        modalDialogGroup.remove_actor(this);
-        Main.layoutManager.uiGroup.insert_child_below(this, modalDialogGroup);
+        //
+        // Also, place lower in `uiGroup` so popup notifications are over it.
+        Main.layoutManager.modalDialogGroup.remove_actor(this);
+        Main.layoutManager.uiGroup.insert_child_above(this, Main.layoutManager.overviewGroup);
     }
 
     vfunc_allocate(box) {
