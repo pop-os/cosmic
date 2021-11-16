@@ -724,6 +724,18 @@ var CosmicAppDisplay = GObject.registerClass({
         });
         dialog.entry.set_text(name);
     }
+
+    select_next_folder() {
+        const next = this.folder.get_next_sibling();
+        if (next instanceof CosmicFolderButton)
+            this.setFolder(next.id);
+    }
+
+    select_previous_folder() {
+        const prev = this.folder.get_previous_sibling();
+        if (prev instanceof CosmicFolderButton)
+            this.setFolder(prev.id);
+    }
 });
 
 // This needs to implement an API similar to SearchResultsView since
@@ -884,8 +896,12 @@ var CosmicAppsDialog = GObject.registerClass({
         this.contentLayout.add(box);
         this.dialogLayout._dialog.add_style_class_name('cosmic-applications-dialog');
         this.connect("key-press-event", (_, event) => {
-            if (event.get_key_symbol() == 65307)
+            if (event.get_key_symbol() == Clutter.KEY_Escape)
                 this.hideDialog();
+            else if (this.appDisplay.visible && event.get_key_symbol() == Clutter.KEY_Page_Down)
+                this.appDisplay.select_next_folder();
+            else if (this.appDisplay.visible && event.get_key_symbol() == Clutter.KEY_Page_Up)
+                this.appDisplay.select_previous_folder();
         });
 
         this.button_press_id = global.stage.connect('button-press-event', () => {
