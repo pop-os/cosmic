@@ -531,6 +531,7 @@ var CosmicAppDisplay = GObject.registerClass({
                 homogeneous: true,
             }),
             x_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
         });
         this.add_actor(this._folderBox);
 
