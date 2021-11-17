@@ -29,6 +29,11 @@ var CosmicFolderEditDialog = GObject.registerClass({
         if (hasEntry) {
             this._entry = new St.Entry();
             contentBox.add_actor(this._entry);
+
+            this._entry.clutter_text.connect('activate', () => {
+                onAccept(this);
+                this.close();
+            });
         }
 
         this.addButton({
@@ -43,6 +48,7 @@ var CosmicFolderEditDialog = GObject.registerClass({
                 onAccept(this);
                 this.close();
             },
+            default: true,
         });
 
         this.open();
