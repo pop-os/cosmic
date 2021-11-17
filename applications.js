@@ -1,4 +1,5 @@
 const { Clutter, Gio, GLib, GObject, Pango, Shell, St } = imports.gi;
+const Animation = imports.ui.animation;
 const AppDisplay = imports.ui.appDisplay;
 const { BaseIcon } = imports.ui.iconGrid;
 const Dialog = imports.ui.dialog;
@@ -758,28 +759,29 @@ var CosmicSearchResultsView = GObject.registerClass({
         this._cancellable = new Gio.Cancellable();
         this._searchTimeoutId = 0;
 
-        this._providers = [];
         this._terms = [];
         this._results = {};
 
-        const provider = new AppDisplay.AppSearchProvider();
-        const providerDisplay = new Search.GridSearchResults(provider, this);
+        this._app_provider = new AppDisplay.AppSearchProvider();
+        const providerDisplay = new Search.GridSearchResults(this._app_provider, this);
         this._content.add(providerDisplay)
-        provider.display = providerDisplay;
-        this._providers.push(provider);
-
-        const available_label = new St.Label({ text: "Available to Install", style_class: "cosmic-applications-available" });
-	this._content.add(available_label);
+        this._app_provider.display = providerDisplay;
 
         const appInfo = Gio.DesktopAppInfo.new("io.elementary.appcenter.desktop");
         const busName = "io.elementary.appcenter";
         const objectPath = "/io/elementary/appcenter/SearchProvider";
         if (appInfo) {
-            const provider = new RemoteSearchProvider2(appInfo, busName, objectPath, true);
-            const providerDisplay = new Search.GridSearchResults(provider, this);
+            const available_box = new St.BoxLayout({ style: 'spacing: 4px;' });
+            const available_label = new St.Label({ text: "Available to Install", style_class: "cosmic-applications-available" });
+            this._available_spinner = new Animation.Spinner(16);
+            available_box.add_actor(available_label);
+            available_box.add_actor(this._available_spinner);
+            this._content.add(available_box);
+
+            this._shop_provider = new RemoteSearchProvider2(appInfo, busName, objectPath, true);
+            const providerDisplay = new Search.GridSearchResults(this._shop_provider, this);
             this._content.add(providerDisplay)
-            provider.display = providerDisplay;
-            this._providers.push(provider);
+            this._shop_provider.display = providerDisplay;
         }
     }
 
@@ -801,41 +803,48 @@ var CosmicSearchResultsView = GObject.registerClass({
         this._cancellable.cancel();
         this._cancellable.reset();
 
+        // Immediately load results for installed apps; timeout for shop results
+        this._doSearch(this._app_provider);
         if (this._searchTimeoutId == 0)
             this._searchTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, this._onSearchTimeout.bind(this));
 
         this.emit('terms-changed');
     }
 
-    _doSearch() {
-        this._providers.forEach(provider => {
-            provider.searchInProgress = true;
+    _doSearch(provider) {
+        if (provider == this._shop_provider)
+            this._available_spinner.play();
 
-            const previousProviderResults = this._results[provider.id];
-            if (this._isSubSearch && previousProviderResults) {
-                provider.getSubsearchResultSet(previousProviderResults,
-                                               this._terms,
-                                               results => {
-                                                   this._gotResults(results, provider);
-                                               },
-                                               this._cancellable);
-            } else {
-                provider.getInitialResultSet(this._terms,
-                                             results => {
-                                                 this._gotResults(results, provider);
-                                             },
-                                             this._cancellable);
-            }
-        });
+        provider.searchInProgress = true;
+
+        const previousProviderResults = this._results[provider.id];
+        if (this._isSubSearch && previousProviderResults) {
+            provider.getSubsearchResultSet(previousProviderResults,
+                                           this._terms,
+                                           results => {
+                                               this._gotResults(results, provider);
+                                           },
+                                           this._cancellable);
+        } else {
+            provider.getInitialResultSet(this._terms,
+                                         results => {
+                                             this._gotResults(results, provider);
+                                         },
+                                         this._cancellable);
+        }
     }
 
     _onSearchTimeout() {
         this._searchTimeoutId = 0;
-        this._doSearch();
+        if (this._shop_provider)
+            this._doSearch(this._shop_provider);
         return GLib.SOURCE_REMOVE;
     }
 
     _gotResults(results, provider) {
+        if (provider === this._shop_provider)
+            this._available_spinner.stop();
+
         const display = provider.display;
         const terms = this._terms;
 
