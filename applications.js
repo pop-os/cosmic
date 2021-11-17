@@ -910,9 +910,9 @@ var CosmicAppsDialog = GObject.registerClass({
         this.connect("key-press-event", (_, event) => {
             if (event.get_key_symbol() == Clutter.KEY_Escape)
                 this.hideDialog();
-            else if (this.appDisplay.visible && event.get_key_symbol() == Clutter.KEY_Page_Down)
+            else if (!this.inSearch && event.get_key_symbol() == Clutter.KEY_Page_Down)
                 this.appDisplay.select_next_folder();
-            else if (this.appDisplay.visible && event.get_key_symbol() == Clutter.KEY_Page_Up)
+            else if (!this.inSearch && event.get_key_symbol() == Clutter.KEY_Page_Up)
                 this.appDisplay.select_previous_folder();
         });
 
