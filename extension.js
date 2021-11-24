@@ -100,6 +100,21 @@ function clock_alignment(alignment) {
     }
 }
 
+function hide_application_menu(hide) {
+    if (hide) {
+        appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function () {
+            Main.panel.statusArea.appMenu.hide();
+        });
+        Main.panel.statusArea.appMenu.hide();
+    } else {
+        if (appMenu_signal_show != null) {
+            Main.panel.statusArea.appMenu.disconnect(appMenu_signal_show);
+            appMenu_signal_show = null;
+        }
+        Main.panel.statusArea.appMenu.show();
+    }
+}
+
 function workspace_picker_direction(controls, left) {
     // There is no "workspace picker" in Gnome 40+
     if (!GNOME_VERSION.startsWith("3.38"))
@@ -402,6 +417,8 @@ function enable() {
         });
     }
 
+    settings = settings_new_schema(extension.metadata["settings-schema"]);
+
     // Hide activities button
     activities_signal_show = Main.panel.statusArea.activities.connect("show", function () {
         Main.panel.statusArea.activities.hide();
@@ -409,12 +426,10 @@ function enable() {
     Main.panel.statusArea.activities.hide();
 
     // Hide app menu
-    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function () {
-        Main.panel.statusArea.appMenu.hide();
+    hide_application_menu(settings.get_boolean("hide-application-menu"));
+    settings.connect("changed::hide-application-menu", () => {
+        hide_application_menu(settings.get_boolean("hide-application-menu"));
     });
-    Main.panel.statusArea.appMenu.hide();
-
-    settings = settings_new_schema(extension.metadata["settings-schema"]);
 
     // Load overlay key action and keep it up to date with settings
     overlay_key_changed(settings);
@@ -639,9 +654,7 @@ function disable() {
     workspaces_button = null;
 
     // Show app menu
-    Main.panel.statusArea.appMenu.disconnect(appMenu_signal_show);
-    appMenu_signal_show = null;
-    Main.panel.statusArea.appMenu.show();
+    hide_application_menu(false);
 
     // Show activities button
     Main.panel.statusArea.activities.disconnect(activities_signal_show);

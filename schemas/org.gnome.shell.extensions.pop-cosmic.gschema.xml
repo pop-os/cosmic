@@ -25,6 +25,9 @@
         <key type="b" name="show-workspaces-button">
             <default>true</default>
         </key>
+        <key type="b" name="hide-application-menu">
+            <default>true</default>
+        </key>
         <key name="clock-alignment" enum="org.gnome.shell.extensions.pop-cosmic.clock">
             <default>'CENTER'</default>
         </key>
