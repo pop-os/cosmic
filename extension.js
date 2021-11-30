@@ -451,15 +451,9 @@ function gnome_40_enable() {
 
     applications.enable();
 
-    const appIcon_activate = AppDisplay.AppIcon.prototype.activate;
-    inject(AppDisplay.AppIcon.prototype, 'activate', function(button) {
-        appIcon_activate.call(this, button);
-        applications.hide();
-    });
-
-    const searchResult_activate = Search.SearchResult.prototype.activate;
-    inject(Search.SearchResult.prototype, 'activate', function() {
-        searchResult_activate.call(this);
+    const overview_hide = Main.overview.hide;
+    inject(Main.overview, 'hide', function() {
+        overview_hide.call(this);
         applications.hide();
     });
 }
