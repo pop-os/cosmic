@@ -787,6 +787,7 @@ var CosmicSearchResultsView = GObject.registerClass({
 
             this._shop_provider = new RemoteSearchProvider2(appInfo, busName, objectPath, true);
             const providerDisplay = new Search.GridSearchResults(this._shop_provider, this);
+            providerDisplay._resultDisplayBin.x_align = Clutter.ActorAlign.START;
             this._content.add(providerDisplay)
             this._shop_provider.display = providerDisplay;
         }
