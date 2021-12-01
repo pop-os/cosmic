@@ -12,6 +12,7 @@ const ParentalControlsManager = imports.misc.parentalControlsManager;
 const { RemoteSearchProvider2 } = imports.ui.remoteSearch;
 const Search = imports.ui.search;
 const { getTermsForSearchString } = imports.ui.searchController;
+const Util = imports.misc.util;
 
 // TODO translate
 
@@ -522,7 +523,9 @@ var CosmicAppDisplay = GObject.registerClass({
         let appIcons = [];
         Shell.AppSystem.get_default().get_installed().forEach(appInfo => {
             const app = Shell.AppSystem.get_default().lookup_app(appInfo.get_id());
-            appIcons.push(new CosmicAppIcon(app));
+            const app_icon = new CosmicAppIcon(app);
+            app_icon.connect('key-focus-in', this._keyFocusIn.bind(this));
+            appIcons.push(app_icon);
         });
         appIcons.sort((a, b) => a.app.get_name().localeCompare(b.app.get_name()))
                 .forEach(icon => this._box.add_actor(icon));
@@ -554,6 +557,10 @@ var CosmicAppDisplay = GObject.registerClass({
 
         this._updateHomeApps();
         this.setFolder(null);
+    }
+
+    _keyFocusIn(app_icon) {
+        Util.ensureActorVisibleInScrollView(this._scrollView, app_icon);
     }
 
     _updateHomeApps() {
@@ -617,7 +624,9 @@ var CosmicAppDisplay = GObject.registerClass({
             const app = Shell.AppSystem.get_default().lookup_app(appInfo.get_id());
             for (const icon of this._box.get_children()) {
                 if (icon.app.get_name().localeCompare(app.get_name()) > 0) {
-                    this._box.insert_child_above(new CosmicAppIcon(app), icon);
+                    const app_icon = new CosmicAppIcon(app);
+                    app_icon.connect('key-focus-in', this._keyFocusIn.bind(this));
+                    this._box.insert_child_above(app_icon, icon);
                     break;
                 }
             }
