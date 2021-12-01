@@ -451,6 +451,12 @@ function gnome_40_enable() {
 
     applications.enable();
 
+    const overview_show = Main.overview.show;
+    inject(Main.overview, 'show', function() {
+        overview_show.call(this);
+        applications.hide();
+    });
+
     const overview_hide = Main.overview.hide;
     inject(Main.overview, 'hide', function() {
         overview_hide.call(this);
