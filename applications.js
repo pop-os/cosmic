@@ -279,8 +279,6 @@ var CosmicAppIcon = GObject.registerClass({
         this.icon.x_expand = true;
         this.icon.y_expand = true;
 
-        this._dot.opacity = 0;
-
         // Vertically center label in available space
         this.icon.label.y_expand = true;
 

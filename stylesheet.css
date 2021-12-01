@@ -2,6 +2,10 @@
 	background-color: #36322f;
 }
 
+.cosmic-applications-dialog .app-well-app-running-dot {
+	background-color: transparent;
+}
+
 .cosmic-applications-box {
 	spacing: 12px;
 }
