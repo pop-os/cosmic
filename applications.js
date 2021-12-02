@@ -5,6 +5,8 @@ const { BaseIcon } = imports.ui.iconGrid;
 const Dialog = imports.ui.dialog;
 const DND = imports.ui.dnd;
 const { ExtensionState } = imports.misc.extensionUtils;
+const ExtensionUtils = imports.misc.extensionUtils;
+const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const { ModalDialog, State } = imports.ui.modalDialog;
 const OverviewControls = imports.ui.overviewControls;
@@ -790,6 +792,7 @@ var CosmicSearchResultsView = GObject.registerClass({
             const available_box = new St.BoxLayout({ style: 'spacing: 4px;' });
             const available_label = new St.Label({ text: "Available to Install", style_class: "cosmic-applications-available" });
             this._available_spinner = new Animation.Spinner(16);
+
             available_box.add_actor(available_label);
             available_box.add_actor(this._available_spinner);
             this._content.add(available_box);
@@ -949,10 +952,64 @@ var CosmicAppsDialog = GObject.registerClass({
                 this.hideDialog();
             }
         });
+
+        this._interfaceSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.interface' });
+        this._interfaceSettings.connect('changed::gtk-theme', this.reload_theme.bind(this));
+        try {
+            this._userThemeSettings = new Gio.Settings({ schema_id: 'org.gnome.shell.extensions.user-theme' });
+            this._userThemeSettings.connect('changed::name', this.reload_theme.bind(this));
+        } catch {}
+        this.reload_theme();
+    }
+
+    reload_theme() {
+        const theme_context = St.ThemeContext.get_for_stage(global.stage);
+        const theme = theme_context.get_theme();
+        if (!theme)
+            return;
+
+        let darkStylesheet = extension.dir.get_child("dark.css");
+        let lightStylesheet = extension.dir.get_child("light.css");
+
+        theme.unload_stylesheet(darkStylesheet);
+        theme.unload_stylesheet(lightStylesheet);
+
+        if (this.is_dark()) {
+            this.resultsView._available_spinner.clear_effects();
+            theme.load_stylesheet(darkStylesheet);
+        } else {
+            this.resultsView._available_spinner.add_effect(new Shell.InvertLightnessEffect());
+            theme.load_stylesheet(lightStylesheet);
+        }
+
+        theme_context.set_theme(theme);
+    }
+
+    is_dark() {
+        // Duplicated from pop-shell
+        const DARK = ["dark", "adapta", "plata", "dracula"];
+
+        const theme = this.theme().toLowerCase();
+        return DARK.some(dark => theme.includes(dark));
+    }
+
+    theme() {
+        if (this._userThemeSettings)
+            return this._userThemeSettings.get_string("name");
+        return this._interfaceSettings.get_string("gtk-theme");
     }
 
     _onDestroy() {
         global.stage.disconnect(this.button_press_id);
+
+        let darkStylesheet = extension.dir.get_child("dark.css");
+        let lightStylesheet = extension.dir.get_child("light.css");
+
+        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+        if (theme) {
+            theme.unload_stylesheet(darkStylesheet);
+            theme.unload_stylesheet(lightStylesheet);
+        }
     }
 
     fadeSearch(newInSearch) {

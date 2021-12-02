@@ -1,17 +1,9 @@
-.cosmic-applications-dialog {
-	background-color: #36322f;
-}
-
 .cosmic-applications-dialog .app-well-app-running-dot {
 	background-color: transparent;
 }
 
 .cosmic-applications-box {
 	spacing: 12px;
-}
-
-.cosmic-applications-icon {
-	color: #9b9b9b;
 }
 
 .cosmic-applications-separator {
@@ -27,7 +19,6 @@
 }
 
 .cosmic-applications-folder-title {
-	color: #ffffff;
 	font-weight: bold;
 	font-size: 1.5em;
 }
@@ -46,7 +37,6 @@
 }
 
 .cosmic-applications-available {
-	color: #ffffff;
 	font-weight: bold;
 }
 

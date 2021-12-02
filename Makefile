@@ -15,7 +15,9 @@ endif
 INSTALLNAME = $(UUID)
 
 SRC = applications.js \
+      dark.css \
       extension.js \
+      light.css \
       metadata.json \
       overview.js \
       prefs.js \

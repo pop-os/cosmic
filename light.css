@@ -1,0 +1,23 @@
+.cosmic-applications-dialog .overview-icon {
+	color: black;
+}
+
+.app-well-app:focus .overview-icon {
+	background-color: #9b9b9b;
+}
+
+.cosmic-applications-icon {
+	color: black;
+}
+
+.cosmic-applications-folder-title {
+	color: black;
+}
+
+.cosmic-applications-available {
+	color: black;
+}
+
+.cosmic-applications-spinner {
+	color: black;
+}
