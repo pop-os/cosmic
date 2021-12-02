@@ -32,6 +32,10 @@
 	font-size: 1.5em;
 }
 
+.cosmic-applications-search-entry {
+	width: 504px;  /* 168 * 3 */
+}
+
 .cosmic-app-icon {
         height: 168px;
         width: 168px;

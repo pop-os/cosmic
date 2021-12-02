@@ -337,7 +337,7 @@ var CosmicAppsHeader = GObject.registerClass({
         this.add_actor(this._folderHeader);
 
         this._searchEntry = new St.Entry({
-            style_class: 'search-entry',
+            style_class: 'cosmic-applications-search-entry',
             hint_text: _('Type to search'),
             track_hover: true,
             can_focus: true,
