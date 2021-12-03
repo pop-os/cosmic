@@ -21,3 +21,11 @@
 .cosmic-applications-spinner {
 	color: black;
 }
+
+.cosmic-folder-edit-button {
+	background: #f2f1ef;
+}
+
+.cosmic-folder-edit-button:hover {
+	background: #f8f8f7;
+}

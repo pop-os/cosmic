@@ -51,3 +51,14 @@
 .cosmic-folder-edit-dialog .message-dialog-description {
 	text-align: left;
 }
+
+.cosmic-folder-edit-button-box {
+	spacing: 8px;
+}
+
+.cosmic-folder-edit-button {
+	box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.2);
+	border-radius: 12px;
+	border-width: 1px;
+	padding: 4px 6px 4px 6px;
+}
