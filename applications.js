@@ -321,15 +321,15 @@ var CosmicAppsHeader = GObject.registerClass({
             y_align: Clutter.ActorAlign.CENTER,
         });
 
-        const rename_icon = new St.Icon ( { icon_name: 'edit-symbolic', icon_size: 32, style_class: 'cosmic-applications-icon' } );
-        const rename_button = new St.Button({ child: rename_icon });
+        const rename_icon = new St.Icon ( { icon_name: 'edit-symbolic', icon_size: 24 } );
+        const rename_button = new St.Button({ child: rename_icon, style_class: 'cosmic-folder-edit-button' });
         rename_button.connect('clicked', () => this.emit('rename-clicked'));
 
-        const delete_icon = new St.Icon ( { icon_name: 'edit-delete-symbolic', icon_size: 32, style_class: 'cosmic-applications-icon' } );
-        const delete_button = new St.Button({ child: delete_icon });
+        const delete_icon = new St.Icon ( { icon_name: 'edit-delete-symbolic', icon_size: 24 } );
+        const delete_button = new St.Button({ child: delete_icon, style_class: 'cosmic-folder-edit-button' });
         delete_button.connect('clicked', () => this.emit('delete-clicked'));
 
-        const buttonBox = new St.BoxLayout({ x_expand: true, x_align: Clutter.ActorAlign.END });
+        const buttonBox = new St.BoxLayout({ x_expand: true, x_align: Clutter.ActorAlign.END, style_class: 'cosmic-folder-edit-button-box' });
         buttonBox.add_actor(rename_button);
         buttonBox.add_actor(delete_button);
 

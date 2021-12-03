@@ -13,3 +13,11 @@
 .cosmic-applications-available {
        color: #ffffff;
 }
+
+.cosmic-folder-edit-button {
+	background: #353535;
+}
+
+.cosmic-folder-edit-button:hover {
+	background: #484848;
+}
