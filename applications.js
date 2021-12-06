@@ -602,8 +602,6 @@ var CosmicAppDisplay = GObject.registerClass({
 
         this.folder.add_style_pseudo_class('checked');
 
-        // TODO: show title, edit/delete button
-
         this._box.get_children().forEach(app => {
             const appInfo = app.app.app_info;
             app.visible = this._parentalControlsManager.shouldShowApp(appInfo) &&
@@ -779,7 +777,7 @@ var CosmicSearchResultsView = GObject.registerClass({
             name: 'searchResultsContent',
             vertical: true,
             x_expand: true,
-	    style_class: 'cosmic-applications-search-results',
+            style_class: 'cosmic-applications-search-results',
         });
         this.add_actor(this._content);
         // TODO: scroll
@@ -882,10 +880,7 @@ var CosmicSearchResultsView = GObject.registerClass({
 
         display.updateSearch(results, terms, () => {
             provider.searchInProgress = false;
-
-            // XXX
         });
-        // TODO
     }
 
     highlightTerms(description) {
