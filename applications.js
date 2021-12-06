@@ -1083,7 +1083,7 @@ function disable() {
 }
 
 function visible() {
-    return dialog.state == State.OPENED || dialog.state == State.OPENING;
+    return dialog && (dialog.state == State.OPENED || dialog.state == State.OPENING);
 }
 
 function show() {
