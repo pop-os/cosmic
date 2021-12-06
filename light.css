@@ -6,23 +6,24 @@
 	background-color: #9b9b9b;
 }
 
+.app-well-app:hover .overview-icon {
+	background-color: #d0d0d0;
+}
+
 .cosmic-applications-icon {
-	color: black;
+	color: #555555;
 }
 
 .cosmic-applications-folder-title {
-	color: black;
+	color: #555555;
 }
 
 .cosmic-applications-available {
 	color: black;
 }
 
-.cosmic-applications-spinner {
-	color: black;
-}
-
 .cosmic-folder-edit-button {
+	color: #555555;
 	background: #f2f1ef;
 }
 
