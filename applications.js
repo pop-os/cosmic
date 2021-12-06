@@ -938,24 +938,27 @@ var CosmicAppsDialog = GObject.registerClass({
                 this.appDisplay.select_previous_folder();
         });
 
+        // Handle click outside dialog
+        // Don't want clicking button to close and re-open popup
         this.button_press_id = global.stage.connect('button-press-event', () => {
-            const [ width, height ] = this.dialogLayout._dialog.get_transformed_size();
-            const [ x, y ] = this.dialogLayout._dialog.get_transformed_position();
-            const [ cursor_x, cursor_y ] = global.get_pointer();
-
-            if (this.visible && (cursor_x < x || cursor_x > x + width || cursor_y < y || cursor_y > y + height)) {
-                // Don't want clicking button to close and re-open popup
-                const apps_button = Main.panel.statusArea['cosmic_applications'];
-                const [ button_x, button_y ] = apps_button.get_transformed_position();
-                const [ button_width, button_height ] = apps_button.get_transformed_size();
-                if (!(cursor_x < button_x ||
-                      cursor_x > button_x + button_width ||
-                      cursor_y < button_y ||
-                      cursor_y > button_y + button_height))
-                    return;
-
-                this.hideDialog();
+            function has_excluded_ancestor(actor) {
+                global.log(actor);
+                if (actor === null)
+                    return false;
+                else if (actor === this.dialogLayout._dialog ||
+                         (actor instanceof AppDisplay.AppIcon &&
+                          actor.app.id == "pop-cosmic-applications.desktop") ||
+                         actor === Main.panel.statusArea['cosmic_applications'])
+                    return true;
+                else
+                    return has_excluded_ancestor.call(this, actor.get_parent());
             }
+
+            const [ x, y ] = global.get_pointer();
+            const focused_actor = global.stage.get_actor_at_pos(Clutter.PickMode.ALL, x, y);
+
+            if (this.visible && !has_excluded_ancestor.call(this, focused_actor))
+                this.hideDialog();
         });
 
         this._interfaceSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.interface' });
