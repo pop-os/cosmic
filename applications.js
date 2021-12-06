@@ -551,7 +551,7 @@ var CosmicAppDisplay = GObject.registerClass({
             Main.queueDeferredWork(this._redisplayWorkId);
         });
 
-        Shell.AppSystem.get_default().connect('installed-changed', () => {
+        this._installChangedId = Shell.AppSystem.get_default().connect('installed-changed', () => {
             Main.queueDeferredWork(this._redisplayWorkId);
         });
 
@@ -559,6 +559,12 @@ var CosmicAppDisplay = GObject.registerClass({
 
         this._updateHomeApps();
         this.setFolder(null);
+
+        this.connect('destroy', this._onDestroy.bind(this));
+    }
+
+    _onDestroy() {
+        Shell.AppSystem.get_default().disconnect(this._installChangedId);
     }
 
     _keyFocusIn(app_icon) {
@@ -633,6 +639,8 @@ var CosmicAppDisplay = GObject.registerClass({
                 }
             }
         });
+        if (added.length > 0)
+            this._updateHomeApps();
 
         this._folders = {};
 
@@ -666,6 +674,8 @@ var CosmicAppDisplay = GObject.registerClass({
         this._folderBox.get_preferred_width(-1);
 
         this.folder.add_style_pseudo_class('checked');
+
+        this.setFolder(this.folder.id);
     }
 
     reset() {
