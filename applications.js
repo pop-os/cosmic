@@ -673,7 +673,8 @@ var CosmicAppDisplay = GObject.registerClass({
 
         this.folder.add_style_pseudo_class('checked');
 
-        this.setFolder(this.folder.id);
+        if (this._folderId !== undefined)
+            this.setFolder(this.folder.id);
     }
 
     reset() {
