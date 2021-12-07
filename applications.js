@@ -881,11 +881,52 @@ var CosmicSearchResultsView = GObject.registerClass({
 
         display.updateSearch(results, terms, () => {
             provider.searchInProgress = false;
-        });
+
+            this._maybeSetInitialSelection();
+        })
     }
 
     highlightTerms(description) {
         return ""; // TODO
+    }
+
+    _maybeSetInitialSelection() {
+        const newDefaultResult = this._app_provider.display.getFirstResult();
+        if (newDefaultResult != this._defaultResult) {
+            this.highlightDefault(false);
+            this._defaultResult = newDefaultResult;
+            this.highlightDefault(true);
+        }
+    }
+
+    highlightDefault(highlight) {
+        if (!this._defaultResult)
+            return;
+
+        if (highlight)
+            this._defaultResult.add_style_pseudo_class('selected');
+        else
+            this._defaultResult.remove_style_pseudo_class('selected');
+    }
+
+    activateDefault() {
+        if (this._defaultResult)
+            this._defaultResult.activate();
+    }
+
+    navigateFocus(direction) {
+        let rtl = this.get_text_direction() == Clutter.TextDirection.RTL;
+        if (direction == St.DirectionType.TAB_BACKWARD ||
+            direction == (rtl
+                ? St.DirectionType.RIGHT
+                : St.DirectionType.LEFT) ||
+            direction == St.DirectionType.UP) {
+            this.navigate_focus(null, direction, false);
+            return;
+        }
+
+        const from = this._defaultResult ?? null;
+        this.navigate_focus(from, direction, false);
     }
 });
 
@@ -913,6 +954,14 @@ var CosmicAppsDialog = GObject.registerClass({
             const terms = getTermsForSearchString(this._header.searchText);
             this.resultsView.setTerms(terms);
             this.fadeSearch(this._header.searchText !== '');
+        });
+        this._text = this._header._searchEntry.clutter_text;
+        this._text.connect('key-press-event', this._onSearchKeyPress.bind(this));
+        this._text.connect('key-focus-in', () => {
+            this.resultsView.highlightDefault(true);
+        });
+        this._text.connect('key-focus-out', () => {
+            this.resultsView.highlightDefault(false);
         });
 
         this.appDisplay.bind_property('folder',
@@ -969,6 +1018,36 @@ var CosmicAppsDialog = GObject.registerClass({
             this._userThemeSettings.connect('changed::name', this.reload_theme.bind(this));
         } catch {}
         this.reload_theme();
+    }
+
+    _onSearchKeyPress(entry, event) {
+        if (!this.inSearch)
+            return Clutter.EVENT_PROPAGATE;
+
+        let symbol = event.get_key_symbol();
+        let arrowNext, nextDirection;
+        if (entry.get_text_direction() === Clutter.TextDirection.RTL) {
+            arrowNext = Clutter.KEY_Left;
+            nextDirection = St.DirectionType.LEFT;
+        } else {
+            arrowNext = Clutter.KEY_Right;
+            nextDirection = St.DirectionType.RIGHT;
+        }
+
+        if (symbol === Clutter.KEY_Tab) {
+            this.resultsView.navigateFocus(St.DirectionType.TAB_FORWARD);
+            return Clutter.EVENT_STOP;
+        } else if (symbol === Clutter.KEY_Down) {
+            this.resultsView.navigateFocus(St.DirectionType.DOWN);
+            return Clutter.EVENT_STOP;
+        } else if (symbol === arrowNext && this._text.position === -1) {
+            this.resultsView.navigateFocus(nextDirection);
+            return Clutter.EVENT_STOP;
+        } else if (symbol === Clutter.KEY_Return || symbol === Clutter.KEY_KP_Enter) {
+            this.resultsView.activateDefault();
+            return Clutter.EVENT_STOP;
+        }
+        return Clutter.EVENT_PROPAGATE;
     }
 
     reload_theme() {
