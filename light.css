@@ -6,7 +6,7 @@
 	background-color: #9b9b9b;
 }
 
-.app-well-app:hover .overview-icon {
+.app-well-app:hover .overview-icon, .app-well-app:selected .overview-icon {
 	background-color: #d0d0d0;
 }
 
