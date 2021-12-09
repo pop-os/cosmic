@@ -1063,10 +1063,14 @@ var CosmicAppsDialog = GObject.registerClass({
         theme.unload_stylesheet(lightStylesheet);
 
         if (this.is_dark()) {
-            this.resultsView._available_spinner.clear_effects();
+            if (this.resultsView._available_spinner) {
+                this.resultsView._available_spinner.clear_effects();
+            }
             theme.load_stylesheet(darkStylesheet);
         } else {
-            this.resultsView._available_spinner.add_effect(new Shell.InvertLightnessEffect());
+            if (this.resultsView._available_spinner) {
+                this.resultsView._available_spinner.add_effect(new Shell.InvertLightnessEffect());
+            }
             theme.load_stylesheet(lightStylesheet);
         }
 
