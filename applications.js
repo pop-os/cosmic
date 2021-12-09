@@ -409,7 +409,8 @@ var CosmicAppsHeader = GObject.registerClass({
             this._name_binding = this.folder.bind_property('name',
                                                            this._title_label, 'text',
                                                            GObject.BindingFlags.SYNC_CREATE);
-            this.grab_key_focus();
+            if (this.mapped)
+                this.grab_key_focus();
         } else {
             this.reset();
         }
@@ -420,7 +421,8 @@ var CosmicAppsHeader = GObject.registerClass({
 
     reset() {
         this._searchEntry.set_text('');
-        this._searchEntry.grab_key_focus();
+        if (this.mapped)
+            this._searchEntry.grab_key_focus();
     }
 });
 
