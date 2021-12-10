@@ -6,7 +6,6 @@ const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const Overview = imports.ui.overview;
 const OverviewControls = imports.ui.overviewControls;
-const Search = imports.ui.search;
 const SwitcherPopup = imports.ui.switcherPopup;
 const Util = imports.misc.util;
 const WorkspacesView = imports.ui.workspacesView;
@@ -22,8 +21,6 @@ let activities_signal_show = null;
 let appMenu_signal_show = null;
 let workspaces_button = null;
 let applications_button = null;
-let search_signal_page_changed = null;
-let search_signal_page_empty = null;
 let signal_overlay_key = null;
 let signal_monitors_changed = null;
 let signal_notify_checked = null;
@@ -181,94 +178,6 @@ function gesture(kind) {
     }
 }
 
-function shell_theme_is_pop() {
-    const stylesheet = Main.getThemeStylesheet();
-    if (stylesheet)
-        return stylesheet.get_path().startsWith("/usr/share/themes/Pop");
-    else
-        return true;
-}
-
-function show_overview_backgrounds() {
-    Main.layoutManager.overviewGroup.style = null;
-    Main.overview._overview.background_color = new Clutter.Color();
-}
-
-function hide_overview_backgrounds() {
-    Main.layoutManager.overviewGroup.style = null;
-    let bg = Main.layoutManager.overviewGroup.get_theme_node().get_background_color();
-    Main.layoutManager.overviewGroup.style = "background-color: rgba(0, 0, 0, 0);";
-    Main.overview._overview.background_color = bg;
-}
-
-function page_changed() {
-    Main.layoutManager._updateVisibility();
-
-    if (!Main.overview.dash.showAppsButton.checked) {
-        Main.overview.searchEntry.hide();
-        Main.overview._overview.remove_style_class_name("cosmic-solid-bg");
-        show_overview_backgrounds();
-    } else {
-        Main.overview.searchEntry.show();
-        Main.overview._overview.add_style_class_name("cosmic-solid-bg");
-        hide_overview_backgrounds();
-    }
-
-    getWorkspacesDisplay()._workspacesViews.forEach(view => {
-        // remove signal handler
-        if (view._cosmic_event_handler) {
-            view.disconnect(view._cosmic_event_handler);
-            delete view._cosmic_event_handler;
-        }
-
-        if (view._monitorIndex == Main.layoutManager.primaryIndex)
-            return;
-
-        let opacity;
-        if (Main.overview.dash.showAppsButton.checked) {
-            view.reactive = true;
-            view._cosmic_event_handler = view.connect('captured-event', (actor, event) => {
-                if (event.type() == Clutter.EventType.BUTTON_PRESS)
-                    Main.overview.hide();
-                // Blocks event handlers for child widgets
-                return Clutter.EVENT_STOP;
-            });
-            opacity = 0;
-        } else {
-            opacity = 255;
-        }
-
-        view.ease({
-           opacity: opacity,
-           duration: Overview.ANIMATION_TIME,
-           mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-        });
-    });
-
-    if (global.vertical_overview && global.vertical_overview.bgManagers) {
-       global.vertical_overview.bgManagers.forEach(bgManager => {
-          let opacity = Main.overview.dash.showAppsButton.checked ? 0 : 255;
-          bgManager.backgroundActor.ease({
-              opacity: opacity,
-              duration: Overview.ANIMATION_TIME,
-              mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-          });
-       });
-    }
-}
-
-function page_empty() {
-    getWorkspacesDisplay()._workspacesViews.forEach(view => {
-       if (Main.overview.dash.showAppsButton.checked && view._monitorIndex != Main.layoutManager.primaryIndex)
-           view.opacity = 0;
-    });
-    if (global.vertical_overview && global.vertical_overview.bgManagers && Main.overview.dash.showAppsButton.checked) {
-       global.vertical_overview.bgManagers.forEach(bgManager => {
-           bgManager.backgroundActor.opacity = 0;
-       });
-    }
-}
-
 function monitors_changed() {
     clock_alignment(settings.get_enum("clock-alignment"));
 }
@@ -282,7 +191,7 @@ function gnome_40_enable() {
         });
     }
 
-    // Exit from overview on Esc of applications view
+    // Disable type to search
     inject(Main.overview._overview._controls._searchController, '_onStageKeyPress', function (actor, event) {
         if (Main.modalCount > 1)
             return Clutter.EVENT_PROPAGATE;
@@ -290,12 +199,8 @@ function gnome_40_enable() {
         let symbol = event.get_key_symbol();
 
         if (symbol === Clutter.KEY_Escape) {
-            if (this._searchActive) this.reset();
             Main.overview.hide();
             return Clutter.EVENT_STOP;
-        } else if (this._shouldTriggerSearch(symbol)) {
-            if (Main.overview.dash.showAppsButton.checked)
-                this.startSearch(event);
         }
         return Clutter.EVENT_PROPAGATE;
     });
@@ -384,14 +289,13 @@ function enable() {
     applications_button = new CosmicTopBarButton(settings, OVERVIEW_APPLICATIONS);
     Main.panel.addToStatusArea("cosmic_applications", applications_button, 1, "left");
 
-    // Hide search and modify background
+    // Hide search
     // This signal cannot be connected until Main.overview is initialized
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         if (!Main.overview._initCalled)
             return GLib.SOURCE_CONTINUE;
 
-        signal_notify_checked = Main.overview.dash.showAppsButton.connect('notify::checked', page_changed);
-        search_signal_showing = Main.overview.connect('showing', page_empty);
+        Main.overview.searchEntry.hide();
 
         return GLib.SOURCE_REMOVE;
     });
@@ -477,14 +381,6 @@ function disable() {
     }
 
     // Show search
-    if (search_signal_page_changed !== null) {
-        Main.overview.viewSelector.disconnect(search_signal_page_changed);
-        search_signal_page_changed = null;
-    }
-    if (search_signal_page_empty !== null) {
-        Main.overview.viewSelector.disconnect(search_signal_page_empty);
-        search_signal_page_empty = null;
-    }
     if (signal_notify_checked !== null) {
         Main.overview.dash.showAppsButton.disconnect(signal_notify_checked);
         signal_notify_checked = null;
@@ -524,6 +420,4 @@ function disable() {
     }
 
     clock_alignment(CLOCK_CENTER);
-
-    show_overview_backgrounds();
 }

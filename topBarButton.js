@@ -40,14 +40,9 @@ class CosmicTopBarButton extends PanelMenu.Button {
         ];
 
         // This signal cannot be connected until Main.overview is initialized
-        this._pageChangedHandler = null;
         this._notifyCheckedHandler = null;
         this._idleSource = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
             if (Main.overview._initCalled) {
-                this._notifyCheckedHandler = Main.overview.dash.showAppsButton.connect('notify::checked', () => {
-                    this.update();
-                });
-
                 this._idleSource = null;
                 return GLib.SOURCE_REMOVE;
             } else {
@@ -62,8 +57,6 @@ class CosmicTopBarButton extends PanelMenu.Button {
 
             if (this._idleSource !== null) GLib.source_remove(this._idleSource);
             if (this._xdndTimeOut !== null) GLib.source_remove(this._xdndTimeOut);
-            if (this._pageChangedHandler !== null) Main.overview.viewSelector.disconnect(this._pageChangedHandler);
-            if (this._notifyCheckedHandler !== null) Main.overview.dash.showAppsButton.disconnect(this._notifyCheckedHandler);
 
             Gio.Settings.unbind(this, "visible");
         });
