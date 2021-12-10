@@ -3,8 +3,6 @@ const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const OverviewControls = imports.ui.overviewControls;
 
-const GNOME_VERSION = imports.misc.config.PACKAGE_VERSION;
-
 var applications = extension.imports.applications;
 
 function with_pop_shell(callback) {
@@ -29,13 +27,7 @@ function overview_visible(kind) {
             }
         }
     } else if (kind == OVERVIEW_APPLICATIONS) {
-        if (!GNOME_VERSION.startsWith("3.38")) {
-            return applications.visible();
-        } else if (Main.overview.visibleTarget) {
-            if (Main.overview.dash.showAppsButton.checked) {
-                return true;
-            }
-        }
+        return applications.visible();
     } else if (kind == OVERVIEW_LAUNCHER) {
         if (with_pop_shell((ext) => {
             return ext.window_search.dialog.visible;
@@ -52,21 +44,13 @@ function overview_visible(kind) {
 
 function overview_show(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
-        if (GNOME_VERSION.startsWith("3.38")) {
-            Main.overview.dash.showAppsButton.checked = false;
-            Main.overview.show();
-        } else if (Main.overview.visible) {
+        if (Main.overview.visible) {
             Main.overview.dash.showAppsButton.checked = false;
         } else {
             Main.overview.show(OverviewControls.ControlsState.WINDOW_PICKER);
         }
     } else if (kind == OVERVIEW_APPLICATIONS) {
-        if (GNOME_VERSION.startsWith("3.38")) {
-            Main.overview.dash.showAppsButton.checked = true;
-            Main.overview.show();
-        } else {
-            applications.show();
-        }
+        applications.show();
     } else if (kind == OVERVIEW_LAUNCHER) {
         Main.overview.hide();
         with_pop_shell((ext) => {
@@ -84,7 +68,7 @@ function overview_hide(kind) {
         with_pop_shell((ext) => {
             ext.exit_modes();
         });
-    } else if (kind == OVERVIEW_APPLICATIONS && !GNOME_VERSION.startsWith("3.38")) {
+    } else if (kind == OVERVIEW_APPLICATIONS) {
         applications.hide();
     } else {
         Main.overview.hide();
