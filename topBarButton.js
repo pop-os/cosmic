@@ -4,8 +4,6 @@ const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 
-const GNOME_VERSION = imports.misc.config.PACKAGE_VERSION;
-
 var { OVERVIEW_WORKSPACES, OVERVIEW_APPLICATIONS, OVERVIEW_LAUNCHER } = extension.imports.overview;
 var { overview_visible, overview_show, overview_hide, overview_toggle } = extension.imports.overview;
 
@@ -46,14 +44,9 @@ class CosmicTopBarButton extends PanelMenu.Button {
         this._notifyCheckedHandler = null;
         this._idleSource = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
             if (Main.overview._initCalled) {
-                if (GNOME_VERSION.startsWith("3.38"))
-                    this._pageChangedHandler = Main.overview.viewSelector.connect('page-changed', () => {
-                        this.update();
-                    });
-                else
-                    this._notifyCheckedHandler = Main.overview.dash.showAppsButton.connect('notify::checked', () => {
-                        this.update();
-                    })
+                this._notifyCheckedHandler = Main.overview.dash.showAppsButton.connect('notify::checked', () => {
+                    this.update();
+                });
 
                 this._idleSource = null;
                 return GLib.SOURCE_REMOVE;
