@@ -813,16 +813,6 @@ var CosmicSearchResultsView = GObject.registerClass({
             providerDisplay._resultDisplayBin.x_align = Clutter.ActorAlign.START;
             this._content.add(providerDisplay)
             this._shop_provider.display = providerDisplay;
-
-            // Only show section if dbus service is available
-            // Remove this code if it's changed to auto-start
-            const update_available_visibility = () => {
-                const visible = this._shop_provider.proxy.g_name_owner !== null;
-                available_box.visible = visible;
-                providerDisplay.visible = visible;
-            };
-            this._shop_provider.proxy.connect('notify::g-name-owner', update_available_visibility);
-            update_available_visibility();
         }
     }
 
@@ -853,12 +843,8 @@ var CosmicSearchResultsView = GObject.registerClass({
     }
 
     _doSearch(provider) {
-        if (provider == this._shop_provider) {
-            // Remove this code if service changed to auto-start
-            if (this._shop_provider.proxy.g_name_owner === null)
-                return;
+        if (provider == this._shop_provider)
             this._available_spinner.play();
-        }
 
         provider.searchInProgress = true;
 
