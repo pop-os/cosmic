@@ -448,15 +448,18 @@ var CosmicModalDialog = GObject.registerClass({
         Main.layoutManager.uiGroup.insert_child_above(this, Main.layoutManager.overviewGroup);
     }
 
-    vfunc_allocate(box) {
+    monitor() {
         let index;
         if (this._monitorConstraint.primary)
             index = Main.layoutManager.primaryIndex;
         else
             index = Math.min(this._monitorConstraint.index, Main.layoutManager.monitors.length - 1);
 
-        const monitor = Main.layoutManager.monitors[index];
+        return Main.layoutManager.monitors[index];
+    }
 
+    vfunc_allocate(box) {
+        const monitor = this.monitor();
         const width = Math.min(box.x2 - box.x1, monitor.width);
         const height = Math.min(box.y2 - box.y1, monitor.height);
 
@@ -677,6 +680,10 @@ var CosmicAppDisplay = GObject.registerClass({
 
         if (this._folderId !== undefined)
             this.setFolder(this.folder.id);
+    }
+
+    resize(height, width) {
+        this._scrollView.set_style(`height: ${height}px;width: ${width}px;`);
     }
 
     reset() {
@@ -1138,6 +1145,13 @@ var CosmicAppsDialog = GObject.registerClass({
     showDialog() {
         this.open();
         this._header.reset();
+
+        // Resize Scroll View in App Display based on monitor dimensions
+        const monitor = this.monitor();
+        const height = Math.floor(monitor.height*.5 / 168) * 168;
+        const width = Math.ceil(monitor.width*.6 / 168) * 168;
+        this.appDisplay.resize(height, width);
+
         this.appDisplay.reset();
 
         // Update 'checked' state of Applications button
