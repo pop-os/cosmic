@@ -6,3 +6,7 @@
 	path = panel
 	url = https://github.com/pop-os/cosmic-panel.git
 	branch = master
+[submodule "libcosmic"]
+	path = libcosmic
+	url = https://github.com/pop-os/libcosmic.git
+	branch = master
