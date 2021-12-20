@@ -241,8 +241,14 @@ function enable() {
     });
 
     // Pop Shop details
-    let original_rebuildMenu = AppDisplay.AppIconMenu.prototype._rebuildMenu;
-    inject(AppDisplay.AppIconMenu.prototype, "_rebuildMenu", function () {
+    let AppMenu;
+    if (AppDisplay.AppIconMenu !== undefined) {
+        AppMenu = AppDisplay.AppIconMenu;
+    } else {
+        AppMenu = AppDisplay.AppMenu;
+    }
+    let original_rebuildMenu = AppMenu.prototype._rebuildMenu;
+    inject(AppMenu.prototype, "_rebuildMenu", function () {
         let ret = original_rebuildMenu.apply(this, arguments);
 
         if (!this._source.app.is_window_backed()) {
