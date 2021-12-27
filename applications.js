@@ -1064,7 +1064,9 @@ var CosmicAppsDialog = GObject.registerClass({
         const theme = theme_context.get_theme();
         if (!theme)
             return;
-
+        if (!this.is_pop_theme()) 
+            // if using custom theme don't inject styles
+            return;
         let darkStylesheet = extension.dir.get_child("dark.css");
         let lightStylesheet = extension.dir.get_child("light.css");
 
@@ -1093,6 +1095,12 @@ var CosmicAppsDialog = GObject.registerClass({
         const theme = this.theme().toLowerCase();
         return DARK.some(dark => theme.includes(dark));
     }
+    is_pop_theme() {
+        // check if user is using pop/pop-dark default theme
+        const POP = ["pop"];
+        const theme = this.theme().toLowerCase();
+        return POP.some(pop => theme.includes(pop));
+    }
 
     theme() {
         if (this._userThemeSettings)
@@ -1102,14 +1110,16 @@ var CosmicAppsDialog = GObject.registerClass({
 
     _onDestroy() {
         global.stage.disconnect(this.button_press_id);
-
-        let darkStylesheet = extension.dir.get_child("dark.css");
-        let lightStylesheet = extension.dir.get_child("light.css");
-
-        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
-        if (theme) {
-            theme.unload_stylesheet(darkStylesheet);
-            theme.unload_stylesheet(lightStylesheet);
+        if (this.is_pop_theme()) {
+            // reload injected stylesheets if using default pop theme
+            let darkStylesheet = extension.dir.get_child("dark.css");
+            let lightStylesheet = extension.dir.get_child("light.css");
+            
+            const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+            if (theme) {
+                theme.unload_stylesheet(darkStylesheet);
+                theme.unload_stylesheet(lightStylesheet);
+            }
         }
     }
 
