@@ -55,7 +55,6 @@ function overview_show(kind) {
         Main.overview.hide();
         with_pop_shell((ext) => {
             ext.tiler.exit(ext);
-            ext.window_search.load_desktop_files();
             ext.window_search.open(ext);
         });
     } else {
