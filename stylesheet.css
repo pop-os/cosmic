@@ -13,9 +13,8 @@
 .cosmic-app-display {
 }
 
+/* Width & height of scroll view are set dynamically to handle scaling. */
 .cosmic-app-scroll-view {
-	height: 504px;  /* 168 * 3 */
-	width: 1176px; /* 168 * 7 */
 }
 
 .cosmic-applications-folder-title {
