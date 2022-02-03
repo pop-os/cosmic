@@ -1149,9 +1149,15 @@ var CosmicAppsDialog = GObject.registerClass({
         // Resize Scroll View in App Display based on monitor dimensions
         const monitor = this.monitor();
         const monitorScale = 1/St.ThemeContext.get_for_stage(global.stage).scale_factor;
-        const height = Math.floor(monitorScale*168) * 3;
-        const width = Math.ceil(monitorScale*168 ) * 7;
-
+        
+        // The grid should never be taller than 3 icons or wider than 7 icons.
+        // If there's not enough room for all of the icons, shrink a little
+        // so it doesn't bump against the edge of the display or go under the panel & dock.
+        const height = Math.min(Math.floor(monitorScale * 168) * 3,
+                                Math.floor(monitorScale * monitor.height * .70 / 168) * 168);
+        const width = Math.min(Math.ceil(monitorScale * 168) * 7,
+                               Math.floor(monitorScale * monitor.width * .90 / 168) * 168);
+        
         this.appDisplay.resize(height, width);
         this.appDisplay.reset();
 
