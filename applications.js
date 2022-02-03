@@ -1149,8 +1149,8 @@ var CosmicAppsDialog = GObject.registerClass({
         // Resize Scroll View in App Display based on monitor dimensions
         const monitor = this.monitor();
         const monitorScale = 1/St.ThemeContext.get_for_stage(global.stage).scale_factor;
-        const height = Math.floor(monitorScale*monitor.height*.5 / 168) * 168;
-        const width = Math.ceil(monitorScale*monitor.width*.6 / 168) * 168;
+        const height = Math.floor(monitorScale*168) * 3;
+        const width = Math.ceil(monitorScale*168 ) * 7;
 
         this.appDisplay.resize(height, width);
         this.appDisplay.reset();
