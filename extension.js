@@ -263,6 +263,7 @@ function enable() {
     });
 
     // Pop Shop details
+	/*TODO
     let AppMenu;
     if (AppDisplay.AppIconMenu !== undefined) {
         AppMenu = AppDisplay.AppIconMenu;
@@ -287,6 +288,7 @@ function enable() {
 
         return ret;
     });
+	*/
 
     // Hide activities button
     activities_signal_show = Main.panel.statusArea.activities.connect("show", function() {
