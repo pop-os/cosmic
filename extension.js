@@ -27,6 +27,7 @@ let signal_notify_checked = null;
 let search_signal_showing = null;
 let original_signal_overlay_key = null;
 let settings = null;
+let touchpad_settings = null;
 
 let injections = [];
 
@@ -149,32 +150,53 @@ function switch_workspace(direction) {
     }
 }
 
-var GESTURE_UP = 0;
-var GESTURE_DOWN = 1;
-var GESTURE_LEFT = 2;
-var GESTURE_RIGHT = 3;
+function swap_for_natural(direction) {
+    switch(direction) {
+        case Meta.MotionDirection.UP:
+            return Meta.MotionDirection.DOWN
+        case Meta.MotionDirection.DOWN:
+            return Meta.MotionDirection.UP
+        case Meta.MotionDirection.LEFT:
+            return Meta.MotionDirection.RIGHT
+        case Meta.MotionDirection.RIGHT:
+            return Meta.MotionDirection.LEFT
+        default:
+            return direction
+    }
+}
 
-function gesture(kind) {
-    if (kind === GESTURE_UP) {
-        switch_workspace(Meta.MotionDirection.UP);
-    } else if (kind === GESTURE_DOWN) {
-        switch_workspace(Meta.MotionDirection.DOWN);
-    } else if (kind === GESTURE_LEFT) {
-        if (overview_visible(OVERVIEW_WORKSPACES)) {
-            overview_hide(OVERVIEW_WORKSPACES);
-        } else if (overview_visible(OVERVIEW_APPLICATIONS)) {
-            overview_hide(OVERVIEW_APPLICATIONS);
-        } else {
-            overview_show(OVERVIEW_WORKSPACES);
-        }
-    } else if (kind === GESTURE_RIGHT) {
-        if (overview_visible(OVERVIEW_WORKSPACES)) {
-            overview_hide(OVERVIEW_WORKSPACES);
-        } else if (overview_visible(OVERVIEW_APPLICATIONS)) {
-            overview_hide(OVERVIEW_APPLICATIONS);
-        } else {
-            overview_show(OVERVIEW_APPLICATIONS);
-        }
+function apply_scroll_settings(direction) {
+    if (touchpad_settings && touchpad_settings.get_boolean('natural-scroll')) {
+        return swap_for_natural(direction)
+    }
+    return direction
+}
+
+function gesture_up() {
+    switch_workspace(apply_scroll_settings(Meta.MotionDirection.UP));
+}
+
+function gesture_down() {
+    switch_workspace(apply_scroll_settings(Meta.MotionDirection.DOWN));
+}
+
+function gesture_left() {
+    if (overview_visible(OVERVIEW_WORKSPACES)) {
+        overview_hide(OVERVIEW_WORKSPACES);
+    } else if (overview_visible(OVERVIEW_APPLICATIONS)) {
+        overview_hide(OVERVIEW_APPLICATIONS);
+    } else {
+        overview_show(OVERVIEW_WORKSPACES);
+    }
+}
+
+function gesture_right() {
+    if (overview_visible(OVERVIEW_WORKSPACES)) {
+        overview_hide(OVERVIEW_WORKSPACES);
+    } else if (overview_visible(OVERVIEW_APPLICATIONS)) {
+        overview_hide(OVERVIEW_APPLICATIONS);
+    } else {
+        overview_show(OVERVIEW_APPLICATIONS);
     }
 }
 
@@ -349,6 +371,9 @@ function enable() {
     // Connect monitors-changed handler
     signal_monitors_changed = Main.layoutManager.connect('monitors-changed', monitors_changed);
     monitors_changed();
+
+    const DESKTOP_PERIPHERALS_TOUCHPAD_SCHEMA =  'org.gnome.desktop.peripherals.touchpad'
+    touchpad_settings = new Gio.Settings({ schema_id: DESKTOP_PERIPHERALS_TOUCHPAD_SCHEMA })
 }
 
 function disable() {
@@ -426,4 +451,6 @@ function disable() {
     }
 
     clock_alignment(CLOCK_CENTER);
+
+    touchpad_settings = null;
 }
