@@ -5,7 +5,8 @@
   "shell-version": [
     "3.38",
     "40",
-    "41"
+    "41",
+    "42"
   ],
   "url": "https://github.com/pop-os/cosmic",
   "uuid": "pop-cosmic@system76.com",
