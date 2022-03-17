@@ -10,6 +10,7 @@ const extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const { ModalDialog, State } = imports.ui.modalDialog;
 const OverviewControls = imports.ui.overviewControls;
+const { PopupMenu } = imports.ui.popupMenu;
 const ParentalControlsManager = imports.misc.parentalControlsManager;
 const { RemoteSearchProvider2 } = imports.ui.remoteSearch;
 const Search = imports.ui.search;
@@ -1005,6 +1006,7 @@ var CosmicAppsDialog = GObject.registerClass({
                 if (actor === null)
                     return false;
                 else if (actor === this.dialogLayout._dialog ||
+                         actor._delegate instanceof PopupMenu ||
                          (actor instanceof AppDisplay.AppIcon &&
                           actor.app.id == "pop-cosmic-applications.desktop") ||
                          actor === Main.panel.statusArea['cosmic_applications'])
