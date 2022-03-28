@@ -16,6 +16,7 @@ INSTALLNAME = $(UUID)
 
 SRC = applications.js \
       dark.css \
+      dbus_service.js \
       extension.js \
       light.css \
       metadata.json \

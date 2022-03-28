@@ -12,6 +12,7 @@ const WorkspacesView = imports.ui.workspacesView;
 const WorkspaceThumbnail = imports.ui.workspaceThumbnail;
 
 var applications = extension.imports.applications;
+var { Service } = extension.imports.dbus_service;
 var { OVERVIEW_WORKSPACES, OVERVIEW_APPLICATIONS, OVERVIEW_LAUNCHER } = extension.imports.overview;
 var { overview_visible, overview_show, overview_hide, overview_toggle } = extension.imports.overview;
 var { CosmicTopBarButton } = extension.imports.topBarButton;
@@ -28,6 +29,7 @@ let search_signal_showing = null;
 let original_signal_overlay_key = null;
 let settings = null;
 let touchpad_settings = null;
+let service = null;
 
 let injections = [];
 
@@ -376,9 +378,25 @@ function enable() {
 
     const DESKTOP_PERIPHERALS_TOUCHPAD_SCHEMA =  'org.gnome.desktop.peripherals.touchpad'
     touchpad_settings = new Gio.Settings({ schema_id: DESKTOP_PERIPHERALS_TOUCHPAD_SCHEMA })
+
+    // Enable dbus service
+    service = new Service();
+    service.GestureLeft = () => { gesture_left(); };
+    service.GestureRight = () => { gesture_right(); };
+    service.GestureUp = () => { gesture_up(); };
+    service.GestureDown = () => { gesture_down(); };
+    service.ToggleApplications = () => { overview_toggle(OVERVIEW_APPLICATIONS); };
+    service.ToggleLauncher = () => { overview_toggle(OVERVIEW_LAUNCHER); };
+    service.ToggleWorkspaces = () => { overview_toggle(OVERVIEW_WORKSPACES); };
 }
 
 function disable() {
+    // Disable dbus service
+    if (service !== null) {
+        service.destroy();
+        service = null;
+    }
+
     gnome_40_disable();
 
     // Disconnect monitors-changed handler

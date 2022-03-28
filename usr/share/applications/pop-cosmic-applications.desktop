@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Show Applications
 Name[pt_BR]=Mostrar Aplicativos
-Exec=dbus-send --session --dest=org.gnome.Shell --type=method_call /org/gnome/Shell org.gnome.Shell.Eval string:'let pop_cosmic = Main.extensionManager.lookup("pop-cosmic@system76.com"); if (pop_cosmic) { pop_cosmic.stateObj.overview_toggle(pop_cosmic.stateObj.OVERVIEW_APPLICATIONS); }'
+Exec=dbus-send --session --dest=com.System76.Cosmic --type=method_call /com/System76/Cosmic com.System76.Cosmic.ToggleApplications
 Icon=pop-cosmic-applications
 Type=Application
 Categories=Utility;
