@@ -1,5 +1,6 @@
 const { Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
 const AppDisplay = imports.ui.appDisplay;
+const { AppMenu } = imports.ui.appMenu;
 const AltTab = imports.ui.altTab;
 const ExtensionUtils = imports.misc.extensionUtils;
 const extension = ExtensionUtils.getCurrentExtension();
@@ -265,32 +266,18 @@ function enable() {
     });
 
     // Pop Shop details
-	/*TODO
-    let AppMenu;
-    if (AppDisplay.AppIconMenu !== undefined) {
-        AppMenu = AppDisplay.AppIconMenu;
-    } else {
-        AppMenu = AppDisplay.AppMenu;
-    }
-    let original_rebuildMenu = AppMenu.prototype._rebuildMenu;
-    inject(AppMenu.prototype, "_rebuildMenu", function () {
-        let ret = original_rebuildMenu.apply(this, arguments);
+    inject(AppMenu.prototype, "_updateDetailsVisibility", function () {
+        this._detailsItem.visible = false;
 
-        if (!this._source.app.is_window_backed()) {
-            if (Shell.AppSystem.get_default().lookup_app('io.elementary.appcenter.desktop')) {
-                this._appendSeparator();
-                let item = this._appendMenuItem(_("Show Details"));
-                item.connect('activate', () => {
-                    let id = this._source.app.get_id();
-                    Util.trySpawn(["io.elementary.appcenter", "appstream://" + id]);
-                    Main.overview.hide();
-                });
-            }
+        const sw = this._appSystem.lookup_app('io.elementary.appcenter.desktop');
+        if (sw !== null) {
+            this._detailsItem = this.addAction(_('Show Details'), async () => {
+                const id = this._app.get_id();
+                Util.trySpawn(["io.elementary.appcenter", "appstream://" + id]);
+                Main.overview.hide();
+            });
         }
-
-        return ret;
     });
-	*/
 
     // Hide activities button
     activities_signal_show = Main.panel.statusArea.activities.connect("show", function() {
