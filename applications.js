@@ -475,6 +475,36 @@ var CosmicModalDialog = GObject.registerClass({
         childBox.init_rect(0, 0, width, height);
         this._backgroundBin.allocate(childBox);
     }
+
+    pushModal(timestamp) {
+        if (this._hasModal)
+            return true;
+
+        let params = { actionMode: this._actionMode };
+        if (timestamp)
+            params['timestamp'] = timestamp;
+        let grab = Main.pushModal(global.stage, params); // Changed from `this` to `global.stage`
+        if (grab.get_seat_state() === Clutter.GrabState.NONE) {
+            Main.popModal(grab);
+            return false;
+        }
+
+        this._grab = grab;
+        Main.layoutManager.emit('system-modal-opened');
+
+        this._hasModal = true;
+        if (this._savedKeyFocus) {
+            this._savedKeyFocus.grab_key_focus();
+            this._savedKeyFocus = null;
+        } else {
+            let focus = this._initialKeyFocus || this.dialogLayout.initialKeyFocus;
+            focus.grab_key_focus();
+        }
+
+        if (!this._shellReactive)
+            this.backgroundStack.set_child_below_sibling(this._eventBlocker, null);
+        return true;
+    }
 });
 
 // Normal FlowLayout doesn't work in a ScrollView. Overriding
@@ -1002,7 +1032,6 @@ var CosmicAppsDialog = GObject.registerClass({
         // Don't want clicking button to close and re-open popup
         this.button_press_id = global.stage.connect('button-press-event', () => {
             function has_excluded_ancestor(actor) {
-                global.log(actor);
                 if (actor === null)
                     return false;
                 else if (actor === this.dialogLayout._dialog ||
