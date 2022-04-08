@@ -699,6 +699,10 @@ var CosmicAppDisplay = GObject.registerClass({
             this._folderBox.add_actor(folder_button);
         });
 
+        if (!this.get_stage()) {
+            return;
+        }
+
         const create_button = new CosmicBaseFolderButton('folder-new-symbolic');
         create_button.label.text = "Create Folder";
         create_button.connect('clicked', () => this.open_create_folder_dialog());
