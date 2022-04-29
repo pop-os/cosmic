@@ -25,7 +25,11 @@ var Service = class {
         this.dbus = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
 
         const onBusAcquired = (conn) => {
-            this.dbus.export(conn, '/com/System76/Cosmic');
+            try {
+                this.dbus.export(conn, '/com/System76/Cosmic')
+            } catch (why) {
+                global.log(`onBusAcquired export failed: ${why}`)
+            }
         };
 
         function onNameAcquired() { }
