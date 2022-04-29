@@ -380,6 +380,7 @@ function enable() {
 function disable() {
     // Disable dbus service
     if (service !== null) {
+        service.dbus.unexport()
         service.destroy();
         service = null;
     }
