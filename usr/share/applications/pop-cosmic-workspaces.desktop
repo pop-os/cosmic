@@ -1,5 +1,6 @@
 [Desktop Entry]
 Name=Show Workspaces
+Name[ko]=작업공간 표시
 Name[pt_BR]=Mostrar Áreas de Trabalho
 Exec=dbus-send --session --dest=com.System76.Cosmic --type=method_call /com/System76/Cosmic com.System76.Cosmic.ToggleWorkspaces
 Icon=pop-cosmic-workspaces
