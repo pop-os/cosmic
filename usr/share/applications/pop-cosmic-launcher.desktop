@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Show Launcher
-Name[ko]=실행기 표시
+Name[ko]=실행기 보기
 Name[pt_BR]=Mostrar Lançador
 Exec=dbus-send --session --dest=com.System76.Cosmic --type=method_call /com/System76/Cosmic com.System76.Cosmic.ToggleLauncher
 Icon=pop-cosmic-launcher
