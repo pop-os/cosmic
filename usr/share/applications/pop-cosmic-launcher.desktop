@@ -2,6 +2,7 @@
 Name=Show Launcher
 Name[ko]=실행기 보기
 Name[pt_BR]=Mostrar Lançador
+Name[cs]=Zobrazit Spouštěč
 Exec=dbus-send --session --dest=com.System76.Cosmic --type=method_call /com/System76/Cosmic com.System76.Cosmic.ToggleLauncher
 Icon=pop-cosmic-launcher
 Type=Application
