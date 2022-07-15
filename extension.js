@@ -114,6 +114,20 @@ function overlay_key_changed(settings) {
     overlay_key_action = settings.get_enum("overlay-key-action");
 }
 
+function show_application_menu(show) {
+    if (show) {
+        if (appMenu_signal_show != null) {
+            Main.panel.statusArea.appMenu.disconnect(appMenu_signal_show);
+            appMenu_signal_show = null;
+        }
+        Main.panel.statusArea.appMenu.show();
+    } else {
+        appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function() {
+            Main.panel.statusArea.appMenu.hide();
+        });
+        Main.panel.statusArea.appMenu.hide();
+    }
+}
 
 function switch_workspace(direction) {
     // Adapted from _showWorkspaceSwitcher
@@ -285,13 +299,13 @@ function enable() {
     });
     Main.panel.statusArea.activities.hide();
 
-    // Hide app menu
-    appMenu_signal_show = Main.panel.statusArea.appMenu.connect("show", function() {
-        Main.panel.statusArea.appMenu.hide();
-    });
-    Main.panel.statusArea.appMenu.hide();
-
     settings = settings_new_schema(extension.metadata["settings-schema"]);
+
+    // Hide app menu
+    show_application_menu(settings.get_boolean("show-application-menu"));
+    settings.connect("changed::show-application-menu", () => {
+        show_application_menu(settings.get_boolean("show-application-menu"));
+    });
 
     // Load overlay key action and keep it up to date with settings
     overlay_key_changed(settings);
@@ -442,9 +456,7 @@ function disable() {
     workspaces_button = null;
 
     // Show app menu
-    Main.panel.statusArea.appMenu.disconnect(appMenu_signal_show);
-    appMenu_signal_show = null;
-    Main.panel.statusArea.appMenu.show();
+    show_application_menu(true);
 
     // Show activities button
     Main.panel.statusArea.activities.disconnect(activities_signal_show);
