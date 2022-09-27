@@ -1204,7 +1204,7 @@ var CosmicAppsDialog = GObject.registerClass({
         this.close();
 
         const cosmicDock = Main.extensionManager.lookup("cosmic-dock@system76.com");
-        if (cosmicDock && cosmicDock.state === ExtensionState.ENABLED) {
+        if (cosmicDock && cosmicDock.state === ExtensionState.ENABLED && cosmicDock.stateObj) {
             const dockManager = cosmicDock.stateObj.dockManager
             if (dockManager) {
                 dockManager._allDocks.forEach((dock) => dock._onOverviewHiding())
