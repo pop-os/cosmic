@@ -3,6 +3,7 @@ Name=Show Applications
 Name[ko]=프로그램 보기
 Name[pt_BR]=Mostrar Aplicativos
 Name[cs]=Zobrazit Aplikace
+Name[hu]=Alkalmazások megjlenítése
 Exec=dbus-send --session --dest=com.System76.Cosmic --type=method_call /com/System76/Cosmic com.System76.Cosmic.ToggleApplications
 Icon=pop-cosmic-applications
 Type=Application
