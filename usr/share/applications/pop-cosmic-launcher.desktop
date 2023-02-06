@@ -4,6 +4,7 @@ Name[ko]=실행기 보기
 Name[pt_BR]=Mostrar Launcher
 Name[cs]=Zobrazit Spouštěč
 Name[hu]=Indító megjelenítése
+Name[fa]=نمایش لانچر
 Exec=dbus-send --session --dest=com.System76.Cosmic --type=method_call /com/System76/Cosmic com.System76.Cosmic.ToggleLauncher
 Icon=pop-cosmic-launcher
 Type=Application
