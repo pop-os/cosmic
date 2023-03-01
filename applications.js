@@ -1189,7 +1189,7 @@ var CosmicAppsDialog = GObject.registerClass({
         // If there's not enough room for all of the icons, shrink a little
         // so it doesn't bump against the edge of the display or go under the panel & dock.
         const height = Math.min(168 * 3,
-                                Math.floor(monitorScale * monitor.height * .70 / 168) * 168);
+                                Math.floor(monitorScale * monitor.height * .65 / 168) * 168);
         const width = Math.min(168 * 7,
                                Math.floor(monitorScale * monitor.width * .90 / 168) * 168);
 
