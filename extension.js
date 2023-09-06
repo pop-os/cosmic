@@ -270,11 +270,14 @@ function enable() {
 
     // Raise first window on alt-tab
     inject(AltTab.AppSwitcherPopup.prototype, "_finish", function (timestamp) {
-        let appIcon = this._items[this._selectedIndex];
-        if (this._currentWindow < 0)
-            Main.activateWindow(appIcon.cachedWindows[0], timestamp);
-        else
-            Main.activateWindow(appIcon.cachedWindows[this._currentWindow], timestamp);
+        const appIcon = this._items[this._selectedIndex]
+        const windowId = this._currentWindow < 0 ? 0 : this._currentWindow
+        const cachedWindow = appIcon.cachedWindows[windowId]
+
+        // Check if the window object exists before activating it
+        if (cachedWindow) {
+            Main.activateWindow(cachedWindow, timestamp)
+        }
 
         SwitcherPopup.SwitcherPopup.prototype._finish.apply(this, [timestamp]);
     });
