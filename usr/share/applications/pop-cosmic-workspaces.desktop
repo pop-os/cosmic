@@ -5,6 +5,7 @@ Name[pt_BR]=Mostrar Áreas de Trabalho
 Name[cs]=Zobrazit Pracovní Prostory
 Name[hu]=Munkaterületek megjelenítése
 Name[fa]=نمایش فضاهای کاری
+Name[ru]=Показать рабочие места
 Name[sk]=Zobraziť Pracovné Priestory
 Exec=dbus-send --session --dest=com.System76.Cosmic --type=method_call /com/System76/Cosmic com.System76.Cosmic.ToggleWorkspaces
 Icon=pop-cosmic-workspaces
