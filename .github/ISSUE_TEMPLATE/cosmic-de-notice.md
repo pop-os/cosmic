@@ -1,6 +1,6 @@
 ---
 name: Are you looking for COSMIC DE?
-about: [COSMIC DE](https://github.com/pop-os/cosmic-epoch/) can be found in another repository. Click for more details.
+about: COSMIC DE can be found in another repository. Click for more information.
 ---
 
 Is this a bug report or feature request related to COSMIC DE? If it is, please go to https://github.com/pop-os/cosmic-epoch/issues instead.
