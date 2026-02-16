@@ -1,0 +1,72 @@
+Dark((
+    name: "PixelFactory",
+    description: "Calibration tool for perceiving signals in desktop-space. Warm amber observation markers against infinite void—tuned for sustained signal analysis. Part of the Signal Archives ecosystem.",
+
+    // Primary accent: Ember Orange — the signal carrier frequency
+    // Warm amber used as calibration marker for visual focus and interaction states
+    accent: (red: 1, green: 0.56078431, blue: 0.18039216, alpha: 1),
+
+    // Main interface background: Void Black — the infinite silence
+    // Deep background allowing signal perception without interference
+    bg_color: (red: 0.07058824, green: 0.07058824, blue: 0.07058824, alpha: 1),
+
+    // Neutral calibration palette: 10-step signal strength scale
+    // Grayscale progression from void to clarity, for hierarchy and depth perception
+    neutral_0: (red: 0.07058824, green: 0.07058824, blue: 0.07058824, alpha: 1),
+    neutral_1: (red: 0.16732027, green: 0.16732027, blue: 0.16732027, alpha: 1),
+    neutral_2: (red: 0.26405229, green: 0.26405229, blue: 0.26405229, alpha: 1),
+    neutral_3: (red: 0.36078432, green: 0.36078432, blue: 0.36078432, alpha: 1),
+    neutral_4: (red: 0.45751634, green: 0.45751634, blue: 0.45751634, alpha: 1),
+    neutral_5: (red: 0.55424837, green: 0.55424837, blue: 0.55424837, alpha: 1),
+    neutral_6: (red: 0.65098039, green: 0.65098039, blue: 0.65098039, alpha: 1),
+    neutral_7: (red: 0.74771242, green: 0.74771242, blue: 0.74771242, alpha: 1),
+    neutral_8: (red: 0.84444444, green: 0.84444444, blue: 0.84444444, alpha: 1),
+    neutral_9: (red: 0.94117647, green: 0.94117647, blue: 0.94117647, alpha: 1),
+
+    // System status signals: frequency indicators for state communication
+    bright_red: (red: 0.78039216, green: 0.10588235, blue: 0, alpha: 1),       // Signal disruption: Errors and critical states
+    bright_green: (red: 0.65098039, green: 0.88627451, blue: 0.18039216, alpha: 1),      // Signal acquired: Success and validation
+    bright_orange: (red: 1, green: 0.77647059, blue: 0.18431373, alpha: 1),    // Signal degradation: Warnings and attention needed
+    bright_blue: (red: 0.35058823, green: 0.3717647, blue: 0.37411765, alpha: 1),     // Signal metadata: Informational and contextual
+
+    // Container backgrounds: isolation chambers for signal observation
+    bg_container: (red: 0.11764706, green: 0.11764706, blue: 0.11764706, alpha: 1),
+    component_bg: (red: 0.11764706, green: 0.11764706, blue: 0.11764706, alpha: 1),
+    primary_container_bg: (red: 0.16470588, green: 0.16470588, blue: 0.16470588, alpha: 1),
+    secondary_container_bg: (red: 0.16470588, green: 0.16470588, blue: 0.16470588, alpha: 1),
+    tertiary_container_bg: (red: 0.22745098, green: 0.22745098, blue: 0.22745098, alpha: 1),
+
+    // Text colors: signal readability calibration
+    text_primary: (red: 0.4745098, green: 0.50980392, blue: 0.51372549, alpha: 1),     // Steel Gray: primary signal transmission
+    text_secondary: (red: 0.49803922, green: 0.48235294, blue: 0.4, alpha: 1),       // Bronze: secondary/contextual signal
+    text_disabled: (red: 0.19176471, green: 0.20235294, blue: 0.20352941, alpha: 1), // Silent: inactive or unavailable signals
+    text_accent: (red: 1, green: 0.56078431, blue: 0.18039216, alpha: 1),            // Ember: highlighted signal carrier
+
+    // Borders and dividers: signal separation and spatial definition
+    border_color: (red: 0.16470588, green: 0.16470588, blue: 0.16470588, alpha: 1),
+    divider_color: (red: 0.16470588, green: 0.16470588, blue: 0.16470588, alpha: 1),
+
+    // Corner radii: calibration geometry for visual focus and signal detection
+    corner_radii: (
+        radius_0: [0.0, 0.0, 0.0, 0.0],
+        radius_s: [4.0, 4.0, 4.0, 4.0],
+        radius_m: [8.0, 8.0, 8.0, 8.0],
+        radius_l: [12.0, 12.0, 12.0, 12.0],
+        radius_xl: [16.0, 16.0, 16.0, 16.0],
+    ),
+
+    // Additional UI colors: interaction feedback signals
+    selection_bg: (red: 0.22745098, green: 0.22745098, blue: 0.22745098, alpha: 1), // Signal focus field
+    selection_text: (red: 1, green: 0.56078431, blue: 0.18039216, alpha: 1),       // Signal emphasis during selection
+    hover_bg: (red: 0.16470588, green: 0.16470588, blue: 0.16470588, alpha: 1),    // Proximity indication
+    focus_ring: (red: 1, green: 0.56078431, blue: 0.18039216, alpha: 1),           // Attention beacon
+
+    // Spacing scale: calibrated intervals for rhythmic perception
+    space_xxs: 2.0,   // Micro-interval
+    space_xs: 4.0,    // Fine calibration
+    space_s: 8.0,     // Base rhythm
+    space_m: 12.0,    // Standard interval
+    space_l: 16.0,    // Major division
+    space_xl: 24.0,   // Component spacing
+    space_xxl: 32.0,  // Section spacing
+))

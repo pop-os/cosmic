@@ -1,0 +1,36 @@
+// PixelFactory Terminal Theme for COSMIC
+// Signal observation and analysis color scheme
+// Calibration colors for terminal-based signal perception
+
+(
+    name: "PixelFactory Terminal",
+    description: "Signal perception calibration for COSMIC terminal emulator. Warm amber observation markers tuned for code analysis and system monitoring.",
+    author: "Amulet Digital",
+
+    // Core terminal colors: perception framework
+    background: "#121212",                   // Void Black — infinite silence
+    foreground: "#798283",                 // Steel Gray — primary signal
+    cursor: "#FF8F2E",                   // Ember Orange — observation marker
+    cursor_text: "#121212",                  // Void — contrast for cursor visibility
+    selection: "rgba(255, 143, 46, 0.15)",  // Amber glow — selection indication
+
+    // Standard ANSI colors (0-7): base signal frequencies
+    black: "#121212",                        // 0: Void — background signal
+    red: "#C71B00",                       // 1: Disruption — errors, exceptions
+    green: "#8A9E78",                    // 2: Harmony — strings, data
+    yellow: "#FFC62F",                  // 3: Alert — warnings, special
+    blue: "#569CD6",                              // 4: Information — types, declarations
+    magenta: "#CF7F8F",                  // 5: Calibration — constants, keywords
+    cyan: "#5FB878",                              // 6: Acquisition — comments, metadata
+    white: "#798283",                      // 7: Signal — standard text
+
+    // Bright ANSI colors (8-15): emphasized frequencies
+    bright_black: "#1e1e1e",                // 8: Void echo — dimmed elements
+    bright_red: "#FF6B6B",                        // 9: Critical — severe errors
+    bright_green: "#A6E22E",            // 10: Success — validation, confirmed
+    bright_yellow: "#FFD700",                     // 11: Emphasis — highlighted alerts
+    bright_blue: "#6BA3FF",                       // 12: Focus — active, primary
+    bright_magenta: "#FF8EBD",                    // 13: Signal marker — attention
+    bright_cyan: "#7FF8A6",                       // 14: Clarity — clarity, bright info
+    bright_white: "#FFFFFF",                      // 15: Peak — maximum brightness
+)
